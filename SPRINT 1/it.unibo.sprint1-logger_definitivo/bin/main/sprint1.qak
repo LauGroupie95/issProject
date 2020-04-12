@@ -1,0 +1,63 @@
+System sprint1
+
+//mosquitto broker
+mqttBroker "localhost" : 1883
+
+//messaggio scambiato con roomperimeterexplorer per indicare di iniziare a scansionare il perimetro della stanza
+Dispatch scanningPerimeter : scanningPerimeter( X )
+//messaggio scambiato con roomperimeterexplorer per indicare che è termianta la scansione del perimetro della stanza
+Dispatch endPerimeter : endPerimeter( X )
+//messaggio scambiato con findtable per indicare di iniziare a cercare il tavolo
+Dispatch scanningTable : scanningTable( X )
+//messaggio scambiato con findtable per indicare che è stato trovato il tavolo
+Dispatch endScanningTable : endScanningTable( X )
+//messaggi inviati al workerinroom
+Dispatch goHome  : goHome( X )
+Dispatch goalDirection : goalDirection(D, Y)
+//messaggio ricevuto dal workerinroom quando ha raggiunto la posizione specificata
+Dispatch goalReached  : goalReached(X)
+Dispatch homeReached  : homeReached( X )
+Dispatch directionReached : directionReached( X )
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+//contesto dell'attore master1
+Context ctxSprint1 ip [host="localhost" port=9002] +mqtt
+//contesto dell'attore roomperimeterexplorer
+Context ctxDummyScanningRoom ip [host="localhost" port=8068] +mqtt
+Context ctxDummyNavigator ip [host="localhost" port=8038] +mqtt
+
+//richiamo all'attore roomperimeterexplorer, il quale è esterno al system (scanningroom.qak)
+ExternalQActor roomperimeterexplorer context ctxDummyScanningRoom 
+ExternalQActor findtable context ctxDummyScanningRoom
+ExternalQActor navi context ctxDummyNavigator
+
+QActor master1 context ctxSprint1 {
+	//stato iniziale per eventuali configurazioni inziali
+	//stato nel quale si comunica al planner di iniziare la scansione del perimetro della stanza
+	State startscanningperimeter initial{
+		println("Inizio scansione della stanza.")
+		forward roomperimeterexplorer -m scanningPerimeter : scanningPerimeter	
+	}
+	Transition t0 whenMsg endPerimeter -> findtable
+	
+	//stato a seguito della fase di scansione del perimetro della stanza
+	State findtable{
+		forward findtable -m scanningTable : scanningTable
+	}
+	Transition t1 whenMsg endScanningTable -> endscanning
+	
+	State endscanning{
+		println("Trovata la posizione del tavolo")
+		delay 1000
+		forward navi -m goHome: goHome(master1)
+   	}
+   	Transition t2 whenMsg homeReached -> returnHome
+   	
+   	State returnHome{
+   		println("Tornato a casa, ora ruoto")
+   		forward navi -m goalDirection : goalDirection(downDir, master1)
+   	}
+}

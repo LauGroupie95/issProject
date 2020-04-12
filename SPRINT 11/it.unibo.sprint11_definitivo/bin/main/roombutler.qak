@@ -1,0 +1,217 @@
+System roombutler     
+mqttBroker "localhost" : 1883 
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+ 
+//da frontend
+Dispatch dynamicStartTheSystem : dynamicStartTheSystem(N)  
+Dispatch staticStartTheSystem : staticStartTheSystem(N) 
+
+//a frontend
+Dispatch systemStarted : systemStarted(N)
+
+//a roomperimeter
+Dispatch scanningPerimeter : scanningPerimeter(N) 
+
+//da roomperimeter
+Dispatch endPerimeter : endPerimeter(N) 
+
+//a findtable
+Dispatch scanningTable : scanningTable(N) 
+
+//da navi
+Dispatch homeReached : homeReached(MIT) 
+
+//a greedy
+Dispatch startEating : startEating(N)
+Dispatch stopEating : stopEating(N)
+
+//REQUISITO: command sent by the smart-phone of Maitre: prepare
+//a prepare
+Dispatch prepare : prepare(N) 
+
+//da prepare
+Dispatch endPrepare : endPrepare(MIT) 
+
+//REQUISITO: command sent by the smart-phone of Maitre: clear
+//a clear
+Dispatch clear : clear(N) 
+
+//da clear
+Dispatch endClear : endClear(MIT) 
+
+//REQUISITO: command sent by the smart-phone of Maitre: add food command, by specifying a food-code
+//a addfood
+Dispatch addFood : addFood(FOODCODE) 
+
+//da addFood 
+Dispatch foodAdded : foodAdded(MIT)
+Dispatch warning : warning(FOODCODE) 
+
+//a kb
+Dispatch log : log(N)
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */ 
+
+Context ctxRoomButler 			ip [host="localhost" port=9008] +mqtt
+Context ctxDummyForScanningRoom ip [host="localhost" port=9001] +mqtt
+Context ctxDummyForNavigator 	ip [host="localhost" port=9002] +mqtt
+Context ctxDummyForParty 		ip [host="localhost" port=9007] +mqtt
+Context ctxDummyForGuest 		ip [host="localhost" port=9009] +mqtt
+Context ctxDummyForKb 			ip [host="localhost" port=9003] +mqtt
+Context ctxDummyForFridge 		ip [host="localhost" port=9006] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor roomperimeterexplorer 	context ctxDummyForScanningRoom 
+ExternalQActor findtable 				context ctxDummyForScanningRoom
+ExternalQActor navi 					context ctxDummyForNavigator
+ExternalQActor prepare 					context ctxDummyForParty
+ExternalQActor clear 					context ctxDummyForParty
+ExternalQActor addfood 					context ctxDummyForParty
+ExternalQActor greedy 					context ctxDummyForGuest
+ExternalQActor kb 						context ctxDummyForKb
+ExternalQActor fridge 					context ctxDummyForFridge
+
+//Non è necessario creare il client TCP in quanto lo fa in automatico alla creazione dell'attore
+QActor rbr context ctxRoomButler {
+	["
+	var FoodCode = \"\"
+	"]
+	
+	State s0 initial {
+		println("RBR AVVIATO")
+		run itunibo.coap.fridge.createClient("localhost", 5684, "serverfridge") //CoAP access
+		//file di log
+		run utils.backupLastLog()
+		run utils.resetFile("fileLog")
+		run utils.resetFile("fileLogKb")
+		run utils.writeLog("actorName | [backToCompensate - ] currentPosition | move | result\\n")
+		run utils.writeLogKb("CONSULT")
+	}
+	Goto waitcmd
+	
+	State waitcmd {
+		println("")
+		println("State waitcmd")
+		println("in attesa di un comando")
+	}
+	Transition t0 	whenMsg staticStartTheSystem -> delegateSetup		//inizia l'applicazione senza lo scanning
+					whenMsg dynamicStartTheSystem -> scanningperimeter	//inizia lo scanning
+					whenMsg	homeReached -> updateMaitre 				//ha finito lo scanning
+					whenMsg prepare -> executePrepare					//inizia la prepare
+					whenMsg endPrepare -> updateMaitre					//fine della prepare
+					whenMsg addFood -> addFood							//inizia a fare addFood
+					whenMsg foodAdded -> updateMaitre					//il codice esisteva, ha fatto
+					whenMsg warning -> updateMaitre						//il codice non esisteva, invia warning
+					whenMsg clear -> executeClear						//inizia la clear
+					whenMsg endClear -> updateMaitre					//fine della clear
+
+	//delega navi per caricare la stanza statica
+	State delegateSetup {
+		println("")
+		println("State delegateSetup")
+		forward navi -m staticStartTheSystem : staticStartTheSystem
+		forward kb -m log : log
+		forward fridge -m log : log
+	}
+	Goto waitcmd
+	
+	//inizio la scansione del perimetro della stanza
+	State scanningperimeter {
+		println("")
+		println("State scanningperimeter")
+		println("Inizio scansione della stanza.")
+		forward roomperimeterexplorer -m scanningPerimeter : scanningPerimeter
+		forward kb -m log : log
+		forward fridge -m log : log
+		delay 1000
+		run itunibo.frontend.frontendSupport.updateCurrentTaskToFrontend(myself, "task(Scanning the perimeter)")	
+	}
+	Transition t1 whenMsg endPerimeter -> findtable
+	
+	//inizio ricerca del tavolo
+	State findtable {
+		println("")
+		println("Fine scansione della stanza.")
+		println("State findtable")
+		println("Inizio ricerca del tavolo.")
+		run itunibo.frontend.frontendSupport.updateCurrentTaskToFrontend(myself, "task(Finding the table)")
+		forward findtable -m scanningTable : scanningTable
+	}
+   	Goto waitcmd
+
+	State executePrepare {
+		println("")
+		println("State executePrepare")
+		delay 500
+		println("Inizio prepare.")
+		run itunibo.frontend.frontendSupport.updateCurrentTaskToFrontend(myself, "task(Executing the command PREPARE)")
+        forward prepare -m prepare : prepare
+        run utils.writeLogKb("prepare")
+	}
+	Goto waitcmd
+
+	State addFood {
+		printCurrentMessage
+		println("")
+		println("State addFood")
+		onMsg(addFood : addFood(CODE)) {
+			["
+			FoodCode = payloadArg(0).toString()
+			"]
+			println("addFood di ${FoodCode}")
+			run itunibo.frontend.frontendSupport.updateCurrentTaskToFrontend(myself, "task(Executing the command ADDFOOD)")
+			forward addfood -m addFood : addFood($FoodCode)
+			run utils.writeLogKb("addfood")
+		}
+	}
+	Goto waitcmd
+	
+	State executeClear {
+		println("")
+		println("State executeClear")
+		forward greedy -m stopEating : stopEating
+		run itunibo.frontend.frontendSupport.updateCurrentTaskToFrontend(myself, "task(Executing the command CLEAR)")
+		forward clear -m clear : clear 
+		run utils.writeLogKb("clear")
+	}
+	Goto waitcmd
+	
+	//aggiornamenti al frontend
+	State updateMaitre {
+		println("")
+		println("State updateMaitre")
+		
+		onMsg(homeReached : homeReached(navi)) {
+			println("Fine ricerca del tavolo.")
+			run itunibo.frontend.frontendSupport.updateFrontend(myself, "systemStarted")
+		}
+		onMsg(endPrepare : endPrepare(prepare)) {
+			println("Fine prepare")
+			run itunibo.frontend.frontendSupport.updateFrontend(myself, "endPrepare")
+			forward greedy -m startEating : startEating
+		}
+		onMsg(foodAdded : foodAdded(addfood)) {
+			println("Fine addFood")
+			run itunibo.frontend.frontendSupport.updateFrontend(myself, "foodAdded")
+		}
+		onMsg(warning : warning(FOODCODE)) {
+			println("addFood non riuscita")
+			run itunibo.frontend.frontendSupport.updateFrontend(myself, "warning")
+		}
+		onMsg(endClear : endClear(clear)) {
+			println("Fine clear")
+			run itunibo.frontend.frontendSupport.updateFrontend(myself, "endClear")
+			forward kb -m log : log
+			forward fridge -m log : log
+		}
+	}
+	Goto waitcmd
+} 

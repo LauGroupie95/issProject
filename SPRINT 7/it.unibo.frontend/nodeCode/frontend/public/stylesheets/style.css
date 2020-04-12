@@ -1,0 +1,63 @@
+td.td {
+  padding: 10px;
+  width: 333px;
+}
+
+td#consoleOutput {
+  padding: 10px;
+  width: 666px;
+}
+
+td#robotStateArea {
+  padding: 10px;
+  width: 999px;
+}
+
+button.buttons {
+  font-size: 20px;
+  width: 150px;
+}
+
+button#answerbutton, button#addfoodbutton {
+  margin-top: 5px;
+  background-color: #f5d033;
+}
+
+button#stopbutton, button#reactivatebutton {
+  background-color: #a52613;
+  color: #FFFFFF;
+}
+
+button#exposebutton, button#consultbutton {
+  background-color: #00294a;
+}
+
+input#foodcode {
+  width: 300px;
+  padding-bottom: 5px;
+}
+
+form.actions {
+  padding-bottom: 5px;
+}
+
+textarea {
+  width: 666px;
+  height: 200px;
+  background-color: black;
+  resize: none;
+  color: #FFFFFF;
+  padding: 10px;
+}
+
+div#stateArea {
+  background-color: #e5e4e2;
+}
+
+table {
+  width: 999px;
+}
+
+label {
+  width: 300px;
+}

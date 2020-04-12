@@ -1,0 +1,36 @@
+PA: [item(dishes),item(forks),item(glasses),item(knives),item(napkins),item(spoons)]
+FT: []
+OT: []
+DW: []
+FR: []
+OR: []
+FD: [item(beers,c006,20),item(chips,c003,30),item(cocacola,c002,15),item(coffee,c013,52),item(eggs,c012,1),item(fanta,c005,10),item(nuggets,c008,1),item(nutella,c014,20),item(pasta,c007,16),item(pizza,c004,50),item(quiches,c000,2),item(redwine,c010,20),item(snacks,c009,52),item(sprite,c011,15),item(tigelle,c015,15),item(wurstel,c001,20)]
+prepare
+prepare
++.OR.dishes
+-.PA.dishes
++.OR.forks
+-.PA.forks
++.OR.glasses
+-.PA.glasses
++.OR.knives
+-.PA.knives
++.OR.napkins
+-.PA.napkins
++.OR.spoons
+-.PA.spoons
++.OT.dishes
+-.OR.dishes
++.OT.forks
+-.OR.forks
++.OT.glasses
+-.OR.glasses
++.OT.knives
+-.OR.knives
++.OT.napkins
+-.OR.napkins
++.OT.spoons
+-.OR.spoons
+prepare
+prepare
+prepare

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Application</title>
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		<script>
+			function escapeRegExp(str){
+			    return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+			}
+			var socket = io.connect();
+
+			socket.on('connect', function(){ 
+				console.log("socket connected");
+			});
+			
+	       	socket.on('message', function(v){ 
+	       		console.log("RECEIVED " + v);
+	        	if(v.indexOf("robotPosition:") >= 0){document.getElementById('robotPosition').innerHTML=v; }
+	        	if(v.indexOf("currentTask:") >= 0){document.getElementById('currentTask').innerHTML=v; }
+	        	if(v.indexOf("currentGoal:") >= 0){
+	        		v1 = v.replace("roomMap:state('", "").replace("')", "");
+	        		v2 = "<br/><pre>"+ v1.replace(/@/g, "<br/>")+"</pre>";
+	          		console.log("v2= " + v2);
+	        		document.getElementById('currentGoal').innerHTML=v2; 
+	        	}
+			});
+			
+			socket.on('warning', function(v){ 
+				document.getElementById('textareaOutput').value = v;
+			});
+
+			function controlInput(str){
+				var patternFoodCode = new RegExp("c[0-9]{3}$");
+				if(!patternFoodCode.test(str)){
+					console.log("Il codice del cibo deve iniziare con 'c' e contenere 3 numeri");
+					document.getElementById('textareaOutput').value = "";
+					alert("Il codice del cibo deve iniziare con 'c' e contenere 3 numeri");
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<div>
+			<h2>RBR Console</h2>
+			<table>
+				<tr>
+					<td class="td">
+						<form action="/prepare" class="actions" method="post" align="center">
+						  	<button type="submit" class="btn btn-success buttons" id="preparebutton">PREPARE</button>
+						</form>
+						<form action="/clear" method="post" align="center">
+						  	<button type="submit" class="btn btn-success buttons" id="clearbutton">CLEAR</button>
+						</form>
+					</td>
+					<td class="td">
+						<label for="foodcode" align="center">Inserisci codice del cibo...</label><br/>
+						<form id="formfoodcode" method="post">				    
+						  	<input type="text" id="foodcode" name="foodcode" placeholder="cXXX"><br/>
+							<button type="submit" formaction="/answer" onclick="controlInput(document.getElementById('foodcode').value)" class="btn btn-default buttons" id="answerbutton" align="left"> ANSWER</button>
+							<button type="submit" formaction="/addfood" onclick="controlInput(document.getElementById('foodcode').value)" class="btn btn-default buttons" id="addfoodbutton" align="right">ADD FOOD</button>
+						</form>
+					</td>
+					<td class="td">
+						<form action="/stop" class="actions" method="post" align="right">
+						  	<button type="submit" class="btn btn-danger buttons" id="stopbutton">STOP</button>
+						</form>
+						<form action="/reactivate" method="post" align="right">
+						  	<button type="submit" class="btn btn-danger buttons" id="reactivatebutton">REACTIVATE</button>
+						</form>
+					</td>
+				</tr>
+				<tr>
+					<td class="td">
+						<form action="/expose" class="actions" method="post" align="center">
+						  	<button type="submit" class="btn btn-primary buttons" id="exposebutton">EXPOSE</button>
+						</form>
+						<form action="/consult" method="post" align="center">
+						  	<button type="submit" class="btn btn-primary buttons" id="consultbutton">CONSULT</button>
+						</form>
+					</td>
+					<td colspan="2" id="consoleOutput">
+						<form>
+							<textarea id="textareaOutput" readonly></textarea>
+						</form>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="3" id="robotStateArea">
+						<!-- Parte delle stampe -->
+						<div id="stateArea">
+							<div>
+					 			<b>ROBOT POSITION</b>: <span id="robotPosition"></span>
+						  	</div>
+							<div>
+						  		<b>CURRENT TASK</b>: <span id="currentTask"></span>
+							</div>
+							<div>
+						  		<b>CURRENT GOAL</b>: <span id="currentGoal"></span>
+							</div>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</body>
+</html>

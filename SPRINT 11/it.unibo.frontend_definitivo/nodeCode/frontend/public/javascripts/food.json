@@ -1,0 +1,20 @@
+{
+	"c000" : "quiches",
+	"c001":"wurstel",
+	"c002":"cola",
+	"c003":"chips",
+	"c004":"pizza",
+	"c005":"fanta",
+	"c006":"beer",
+	"c007":"pasta",
+	"c008":"nuggets",
+	"c009":"snacks",
+	"c010":"wine",
+	"c011":"colazero",
+	"c012":"omelettes",
+	"c013":"brioches",
+	"c014":"crescentine",
+	"c015":"tigelle",
+	"c00021":"Error food code format",
+	"c040":"Not present"
+}

@@ -1,0 +1,123 @@
+System prepare
+mqttBroker "localhost" : 1883
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+
+//messaggi inviati al/dal navigator
+Dispatch startPrepare : startPrepare(N)
+Dispatch goHome : goHome(MIT)
+Dispatch reachAppliance : reachAppliance(MIT, NAME)
+Dispatch reachTable : reachTable(MIT)
+Dispatch pantryReached : pantryReached(N)
+Dispatch tableReached : tableReached(N)
+Dispatch fridgeReached : fridgeReached(N)
+Dispatch homeReached : homeReached(N)
+Dispatch endPrepare : endPrepare(N)
+
+//DR = domestic resource
+//FCL = food code list
+Dispatch moveObjToDomesticResource : moveObjToDomesticResource(DR)
+Dispatch moveFoodToDomesticResource : moveFoodToDomesticResource(DR)
+Dispatch moveObjOnRobot : moveObjOnRobot(DR)
+Dispatch moveSpecificFoodOnRobot : moveSpecificFoodOnRobot(FCL)
+Dispatch expose : expose(N)
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+Context ctxDummyNavigator ip [host="localhost" port=8038] +mqtt
+Context ctxDummyKb ip [host="localhost" port=9000] +mqtt
+Context ctxPrepare ip [host="localhost" port=9002] +mqtt
+Context ctxDummyForSprint3 ip [host="localhost" port=9003] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+ExternalQActor master3 context ctxDummyForSprint3
+ExternalQActor navi context ctxDummyNavigator
+ExternalQActor kb context ctxDummyKb
+
+//Attore incaricato di svolgere la PREPARE
+QActor prepare context ctxPrepare {
+	["var inTable = 0"]
+	
+	State s0 initial{
+		println("PREPARE AVVIATA")
+		forward kb -m expose : expose
+	}
+	Goto waitCmd
+
+	State waitCmd{
+		println("in attesa di un comando")
+    }
+	Transition t0 whenMsg startPrepare -> doPrepare
+	
+	State doPrepare{
+		println("")
+		println("State doPrepare")  
+		println("Obiettivo PANTRY")
+		forward navi -m reachAppliance : reachAppliance(prepare, pantry)
+	}
+	Transition t1 whenMsg pantryReached -> inPantry
+	
+	State inPantry{
+		println("")
+		println("State inPantry")
+		delay 500
+		forward kb -m moveObjOnRobot : moveObjOnRobot(pantry)
+		
+		println("Obiettivo TABLE")
+		forward navi -m reachTable : reachTable(prepare)
+	}
+	Transition t2 whenMsg tableReached -> inTable
+	
+	State inTable{
+		println("")
+		println("State inTable")
+		delay 1000
+		["if(inTable == 0){"]
+			forward kb -m moveObjToDomesticResource : moveObjToDomesticResource(table)
+			delay 5000
+		
+			//prima volta che arrivo al tavolo durante la PREPARE --> devo andare al fridge
+			println("Obiettivo FRIDGE")
+			forward navi -m reachAppliance : reachAppliance(prepare, fridge)
+			["inTable = inTable + 1
+		}else{"]
+			forward kb -m moveFoodToDomesticResource : moveFoodToDomesticResource(table)
+			delay 5000
+			
+			//seconda volta che arrivo al tavolo durante la PREPARE --> devo tornare a casa
+			println("Obiettivo RH")
+			forward navi -m goHome : goHome(prepare)
+		["}"]
+	}
+	Transition t3 whenMsg fridgeReached -> inFridge
+				  whenMsg homeReached -> endPrepare
+
+	State inFridge{
+		println("")
+		println("State inFridge")
+		delay 500
+		//1 wurstel, 2 cola, 1 pizza, 2 chips, 1 fanta, 3 birra, 1 pasta, 3 vino 
+		["val FoodCodeList = \"c001_c002_c004_c003_c003_c005_c006_c002_c007_c010_c010_c010_c006_c006\""]
+		println("FoodCodeList = ${FoodCodeList}")
+		forward kb -m moveSpecificFoodOnRobot : moveSpecificFoodOnRobot($FoodCodeList)
+		delay 1000
+		println("Obiettivo TABLE")
+		forward navi -m reachTable : reachTable(prepare)
+	}
+	Transition t4 whenMsg tableReached -> inTable
+	
+	State endPrepare{
+		println("")
+		println("State endPrepare")
+		println("PREPARE terminata")
+		println("")
+		forward kb -m expose : expose
+		forward master3 -m endPrepare : endPrepare
+	}
+}

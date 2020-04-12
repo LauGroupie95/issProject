@@ -1,0 +1,133 @@
+System sprint4
+mqttBroker "localhost" : 1883 
+//per COAP cambiare indirizzo in resourceObserverCoapClient.kt 
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+
+//messaggio scambiato con roomperimeterexplorer per iniziare a scansionare il perimetro della stanza
+Dispatch scanningPerimeter : scanningPerimeter(N)
+//messaggio scambiato con roomperimeterexplorer terminata la scansione del perimetro della stanza
+Dispatch endPerimeter : endPerimeter(N)
+//messaggio scambiato con findtable per indicare di iniziare a cercare il tavolo
+Dispatch scanningTable : scanningTable(N)
+Dispatch homeReached : homeReached(N)
+
+//REQUISITO: command sent by the smart-phone of Maitre: prepare
+Dispatch prepare : prepare(N) 
+Dispatch endPrepare : endPrepare(N)
+
+//REQUISITO: command sent by the smart-phone of Maitre: clear
+Dispatch clear : clear(N) 
+Dispatch endClear : endClear(N)
+
+//commands sent by the smart-phone of Maitre:
+//prepare 
+//add food (food-code) 
+//clear
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */ 
+
+Context ctxSprint4 ip [host="localhost" port=9001] +mqtt
+Context ctxDummyScanningRoom ip [host="localhost" port=8068] +mqtt
+Context ctxDummyNavigator ip [host="localhost" port=8038] +mqtt
+Context ctxDummyPrepare ip [host="localhost" port=9002] +mqtt
+Context ctxDummyClear ip [host="localhost" port=9003] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor roomperimeterexplorer context ctxDummyScanningRoom 
+ExternalQActor findtable context ctxDummyScanningRoom
+ExternalQActor navi context ctxDummyNavigator
+ExternalQActor prepare context ctxDummyPrepare
+ExternalQActor clear context ctxDummyClear
+
+//attore dello sprint
+QActor master4 context ctxSprint4 { 
+	
+	//stato iniziale per eventuali configurazioni inziali
+	State s0 initial{
+		println("MASTER 4 AVVIATO")
+		run utils.backupLastLog()
+		run utils.resetFile("fileLog")
+		run utils.writeLog("actorName | [backToCompensate - ] currentPosition | move | result\\n")
+		run itunibo.coap.fridge.createClient("localhost", 5684, "serverfridge") //CoAP access
+	}
+	Goto scanningperimeter
+	
+	//stato nel quale si comunica al planner di iniziare la scansione del perimetro della stanza
+	State scanningperimeter{
+		println("")
+		println("State scanningperimeter")
+		println("Inizio scansione della stanza.")
+		forward roomperimeterexplorer -m scanningPerimeter : scanningPerimeter	
+	}
+	Transition t0 whenMsg endPerimeter -> findtable
+	
+	//stato a seguito della fase di scansione del perimetro della stanza
+	State findtable{
+		println("")
+		println("Fine scansione della stanza.")
+		println("State findtable")
+		println("Inizio ricerca del tavolo.")
+		forward findtable -m scanningTable : scanningTable
+	}
+   	Transition t1 whenMsg homeReached -> executePrepare
+        
+    State executePrepare{
+    	println("")
+    	println("Fine ricerca del tavolo.")
+		println("State executePrepare")
+		delay 500
+		println("Inizio prepare.")
+		//REQUISITO: expose via COAP its current content on the Maitre smart-phone;
+		run itunibo.coap.fridge.put("expose") 
+		delay 1000
+        forward prepare -m prepare : prepare  
+	}
+	Transition t2 whenMsg endPrepare -> executeClear
+	
+	State executeClear{
+		println("")
+		println("Fine prepare")
+		println("State executeClear")
+		delay 1000
+		//REQUISITO: answer via COAP to questions about its content
+		//necessario che compaia la parola answer e non solo il codice?
+		run itunibo.coap.fridge.put("C000") //NO perché è terminata
+		delay 500
+		
+		println("Inizio clear.")
+        forward clear -m clear : clear
+	}
+	Transition t3 whenMsg endClear -> next
+	
+	State next{
+		println("")
+		println("Fine clear")
+		
+		println("State next")
+		delay 1000
+		//REQUISITO: answer via COAP to questions about its content
+		run itunibo.coap.fridge.put("C000") //SI perché l'ho rimessa in frigo
+		delay 500
+		//REQUISITO: answer via COAP to questions about its content
+		run itunibo.coap.fridge.put("C006") //SI, beer
+		delay 500
+		//REQUISITO: answer via COAP to questions about its content
+		run itunibo.coap.fridge.put("C040") //NO, non esiste
+		delay 500
+		//REQUISITO: expose via COAP its current content on the Maitre smart-phone;
+		run itunibo.coap.fridge.put("expose") 
+		delay 1000
+		
+		println("Finito sprint4.")
+	}
+	
+	
+}

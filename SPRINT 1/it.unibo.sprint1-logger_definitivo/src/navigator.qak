@@ -1,0 +1,233 @@
+//Questo è il nostro navigatore
+System navigator
+
+mqttBroker "localhost" : 1883
+
+Event  robotPosition: robotPosition( X, Y, D )
+
+Dispatch modelUpdate  : modelUpdate( TARGET, VALUE )
+Dispatch stepOk        : stepOk(V)		//TODO eliminate  V
+Dispatch stepFail      : stepFail(R,T) //R=ok | obstacle, T = time
+//messaggi scambiato tra il navigator e l'attore dello sprint per raggiungere una posizione specifica
+Dispatch startGoal  : startGoal(X,Y)
+Dispatch goalDirection : goalDirection(D, Y)
+Dispatch goHome  : goHome( X )
+Dispatch homeReached  : homeReached( X )
+Dispatch directionReached  : directionReached( X )
+//messaggio che riceve workerinroom per salvarsi le posizioni del tavolo e degli elettrodomestici
+Dispatch sendInfoPos : sendInfoPos( NAME, X, Y )
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+//contesto dell'attore attuale
+Context ctxNavigator ip [host="localhost" port=8038] +mqtt
+//contesto della mente
+Context ctxDummyForMind ip [host="localhost" port=8035] +mqtt
+//contesto dello sprint
+Context ctxDummySprint1 ip [host="localhost" port=9002] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+//richiamo all'attore resourcemodel, il quale è esterno al progetto
+ExternalQActor resourcemodel context ctxDummyForMind
+//richiamo all'attore onestepahead, il quale è esterno al progetto
+ExternalQActor onestepahead  context ctxDummyForMind
+
+//richiamo all'attore master1, il quale è esterno al progetto
+ExternalQActor master1  context ctxDummySprint1
+
+QActor navi context ctxNavigator {     
+["
+val mapname     =\"roomMap\"
+
+var Curmove     = \"\" 
+var curmoveIsForward = false 
+
+//REAL ROBOT
+//var StepTime   = 1000 	 
+//var PauseTime  = 500 
+
+//VIRTUAL ROBOT
+var StepTime   = 330	//for virtual
+var PauseTime  = 300
+
+var PauseTimeL  = PauseTime.toLong()
+
+var goalX = 0
+var goalY = 0
+
+var esecuzioneInCorso = \"\" //variabile che indica cosa sta facendo il robot: con tale variabile so quale messaggio 
+							//devo inviare al master dopo aver raggiunto il goal
+var destinatario = \"\"
+var Tback = 0
+var updated = false
+
+"]
+	State s0 initial{
+		solve( consult("moves.pl")	 )
+		solve(consult("domesticAppliancesPos.pl"))
+ 		run itunibo.planner.plannerUtil.initAI() 
+	}
+	Goto waitCmd
+
+	State waitCmd{
+//		run itunibo.robot.utils.backupLastLog()
+// 		["
+//		var log = \"==================== navi ====================\\n[backToCompensate - ] currentPosition | move | result\\n===============================================================\"
+//		"]
+//		run itunibo.robot.utils.writeLog(log)
+		println("in attesa di un comando")
+    }
+    Transition t1 whenMsg goalDirection -> controlDirection
+				  whenMsg goHome -> returnHome
+				  whenMsg sendInfoPos -> savePos
+				  whenEvent robotPosition -> updateRobotPos
+				
+	//Si salva la posizione corrente del robot			  
+	State updateRobotPos{
+		if"updated == false"{
+			println("Ricevuta posizione aggiornata del robot")
+			onMsg(robotPosition : robotPosition(X, Y, D)){
+				run itunibo.planner.moveUtils.loadRoomMap( myself, mapname )	
+				["
+				var x = payloadArg(0).toString().toInt()
+				var y = payloadArg(1).toString().toInt()
+				var d = payloadArg(2).toString()
+				itunibo.planner.plannerUtil.resetRobotPos(x, y, itunibo.planner.plannerUtil.getPosX(), itunibo.planner.plannerUtil.getPosY(), d )
+				updated = true
+				"]
+		  		run itunibo.planner.moveUtils.showCurrentRobotState()
+			 	["	val MapStr =  itunibo.planner.plannerUtil.getMapOneLine()  "]
+			 	forward resourcemodel -m modelUpdate : modelUpdate(roomMap,$MapStr)
+			}
+		}
+	}
+	Goto waitCmd
+				  
+	//Mi salvo nella KB del navigator quali sono le destinazioni più importanti			  
+	State savePos{
+		onMsg(sendInfoPos : sendInfoPos(NAME, X, Y)){
+			println("Ricevuto un messaggio con posizione da salvare: ${payloadArg(0).toString()} ${payloadArg(1).toString()} ${payloadArg(2).toString()}")
+			["var salvaX = payloadArg(1).toInt()
+			var salvaY = payloadArg(2).toInt()
+			when( payloadArg(0).toString()) {
+	  		\"table\" -> "] solve(assert(table("${salvaX}", "${salvaY}")))
+	    	["\"fridge\" ->"] solve(assert(fridge("${salvaX}", "${salvaY}")))
+		    ["\"pantry\" ->"] solve(assert(pantry("${salvaX}", "${salvaY}")))
+		    ["\"dishWasher\" ->"] solve(assert(dishWasher("${salvaX}", "${salvaY}")))
+		["}"]				
+		}
+	}Goto waitCmd
+				  		
+	//ritorna a casa indipendentemente da dove si trova adesso			  			
+	State returnHome{
+		onMsg(goHome : goHome(X)){
+			println("Ricevuto messaggio per tornare ad RH")
+			["
+				goalX = 0
+			 	goalY = 0
+				esecuzioneInCorso = \"RH\"
+				destinatario = payloadArg(0).toString()
+			"]
+			forward navi -m startGoal : startGoal(0, 0)
+		}
+	}
+	Transition t10 whenMsg startGoal -> reachRequestedGoal
+	
+	//Si salva la mappa e poi innesca il meccanismo di calcolo del percorso
+	State reachRequestedGoal{
+  		  ["	val MapStr =  itunibo.planner.plannerUtil.getMapOneLine()  "]
+			forward resourcemodel -m modelUpdate : modelUpdate(roomMap,$MapStr)
+ 	}  
+	Goto makeThePlan
+	
+	//Ottiene la lista di mosse per il goal
+	State makeThePlan{
+ 		run itunibo.planner.plannerUtil.setGoal(goalX,goalY)
+  		run itunibo.planner.moveUtils.doPlan( myself )
+   	} 
+	Goto executePlannedActions
+		
+	//Esegue la lista di mosse	
+	State executePlannedActions{  
+		solve( retract( move(M) ) ) 
+		ifSolved {  
+			["Curmove = getCurSol(\"M\").toString() 
+              curmoveIsForward=(Curmove == \"w\")
+	        "]
+		} else { ["Curmove = \"\"; curmoveIsForward=false"]  }  
+ 	}
+	Goto checkAndDoAction  if "(Curmove.length>0) " else goalOk 
+
+	//Sono arrivato a destinazione
+ 	State goalOk{		  
+ 		run itunibo.planner.moveUtils.showCurrentRobotState()
+	 	["	val MapStr =  itunibo.planner.plannerUtil.getMapOneLine()  "]
+	 	forward resourcemodel -m modelUpdate : modelUpdate(roomMap,$MapStr)
+	 	run itunibo.planner.moveUtils.showCurrentRobotState()
+	 	run itunibo.planner.plannerUtil.saveMap(mapname)
+	 	delay 500
+	 	println("${esecuzioneInCorso}")
+	 	["when(esecuzioneInCorso) {
+	    	\"RH\" ->	{
+						if(destinatario == \"master1\")"] forward master1 -m homeReached : homeReached			
+		   	["}
+		   	\"ruotando\" -> {
+						if(destinatario == \"master1\")"] forward master1 -m directionReached : directionReached			
+			["}
+		}"]
+ 	}
+ 	Goto waitCmd
+  	
+ 	//Esegue la mossa se è una rotazione o un HALT
+	State checkAndDoAction{	 }
+	Goto doForwardMove if "curmoveIsForward" else doTheMove
+	  
+	State doTheMove{
+		run itunibo.planner.moveUtils.rotate(myself, Curmove, PauseTime)
+  	}
+	Goto executePlannedActions 
+	
+ 	State doForwardMove{
+ 		delayVar PauseTimeL 
+ 		run itunibo.planner.moveUtils.attemptTomoveAhead(myself, StepTime)
+	} 
+	Transition t0   whenMsg stepOk   -> handleStepOk   
+					whenMsg stepFail -> hadleStepFail 	
+    	
+	State handleStepOk{
+ 		run itunibo.planner.moveUtils.updateMapAfterAheadOk(myself)
+	}
+	Goto executePlannedActions
+	
+	//Quando va a sbattere contro il muro, facciamo la compensazione
+ 	State hadleStepFail{  
+		onMsg(stepFail : stepFail(Obs,Time)) { 
+			["Tback=payloadArg(1).toString().toInt() / 4"]
+ 		}
+ 		run itunibo.planner.moveUtils.backToCompensate(myself, Tback, PauseTime)   
+ 		run itunibo.planner.moveUtils.updateMapAfterAheadOk(myself)
+	}
+	Goto executePlannedActions
+	
+	//Ruoto finché non ho la direzione indicatami dal messaggio
+	State controlDirection{
+		["
+			esecuzioneInCorso = \"ruotando\"
+		"]
+		onMsg(goalDirection : goalDirection(D, Y)){
+			["
+				destinatario = payloadArg(1).toString()
+				while(itunibo.planner.moveUtils.getDirection(myself) != payloadArg(0).toString()){
+					itunibo.planner.moveUtils.rotateLeft(myself, PauseTime)
+					delay(500)
+				}
+			"]
+		}
+	}
+	Goto goalOk
+}	

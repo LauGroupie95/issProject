@@ -1,0 +1,6 @@
+startFrontend.bat
+
+OPPURE DA TERMINALE PARTENDO DALLA CARTELLA it.unibo.frontend
+cd nodeCode
+cd frontend
+node frontendServer.js localhost

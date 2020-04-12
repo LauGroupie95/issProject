@@ -1,0 +1,94 @@
+td.td {
+  padding: 10px;
+  width: 333px;
+}
+
+td#consoleOutput {
+  padding: 10px;
+  width: 666px;
+}
+
+td#robotStateArea {
+  padding: 10px;
+  width: 999px;
+}
+
+button.buttons {
+  font-size: 20px;
+  width: 150px;
+}
+
+button#answerbutton, button#addfoodbutton {
+  margin-top: 5px;
+  background-color: #f5d033;
+}
+
+button#stopbutton, button#reactivatebutton {
+  background-color: #a52613;
+  color: #FFFFFF;
+}
+
+input#foodcode {
+  width: 300px;
+  padding-bottom: 5px;
+}
+
+select#foodcode-dropdown {
+  width: 300px;
+  padding-bottom: 5px;
+}
+
+form.actions {
+  padding-bottom: 5px;
+}
+
+form#addfoodform {
+  position: relative;
+  bottom: 47px;
+  left: 151px;
+}
+
+textarea {
+  width: 300px;
+  height: 200px;
+  background-color: black;
+  resize: none;
+  color: #FFFFFF;
+  padding: 10px;
+  font-size: 16px;
+  display: inline-block;
+}
+
+textarea#textareaOutputTable, textarea#textareaOutputFridge, textarea#textareaOutputRobot {
+  height: 450px;
+}
+
+div#stateArea {
+  background-color: #e5e4e2;
+}
+
+table {
+  width: 999px;
+}
+
+label {
+  width: 300px;
+}
+
+h2 {
+  width: 999px;
+}
+
+body {
+  background-image: url(../../images/sfondo.jpeg);
+  background-size: cover;                
+  background-repeat: no-repeat;
+  background-position: bottom bottom;
+  /* background-size: 100% auto; */
+}
+
+td.td span {
+  display: block;
+  text-align: center;
+  font-weight: bold;
+}

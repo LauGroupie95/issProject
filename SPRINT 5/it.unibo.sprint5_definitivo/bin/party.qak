@@ -1,0 +1,137 @@
+System party
+mqttBroker "localhost" : 1883 
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+
+//REQUISITO: command sent by the smart-phone of Maitre: add food command, by specifying a food-code
+Dispatch addFood : addFood(FOODCODE)
+Dispatch foodAdded : foodAdded(N)
+
+Dispatch fridgeReached : fridgeReached(N)
+Dispatch reachAppliance : reachAppliance(MIT, NAME)
+
+Dispatch expose : expose(N)
+Dispatch homeReached : homeReached(N)
+Dispatch goHome : goHome(MIT)
+Dispatch warning : warning(N) //to master when code food doesn't exist
+Dispatch answerFromFridgeCoap : answerFromFridgeCoap(ANSWER) //da fridgecoap
+Dispatch moveSpecificFoodOnRobot : moveSpecificFoodOnRobot(FCL) //to fridgecoap
+Dispatch tableReached : tableReached(N)
+Dispatch reachTable : reachTable(MIT)
+Dispatch moveFoodToDomesticResource : moveFoodToDomesticResource(DR)
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */ 
+
+Context ctxDummyNavigator ip [host="localhost" port=8038] +mqtt
+Context ctxParty ip [host="localhost" port=9005] +mqtt
+Context ctxDummyForSprint5 ip [host="localhost" port=9001] +mqtt
+Context ctxDummyFridge ip [host="localhost" port=9004] +mqtt
+Context ctxDummyKb ip [host="localhost" port=9000] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor fridge context ctxDummyFridge
+ExternalQActor master5 context ctxDummyForSprint5
+ExternalQActor navi context ctxDummyNavigator
+ExternalQActor kb context ctxDummyKb
+
+QActor addfood context ctxParty {
+	
+	[" var answer=\"\" 
+	var FoodCode=\"\" "]
+	 
+	State s0 initial{
+		println("ADDFOOD AVVIATO")
+		run itunibo.coap.fridge.createClient("localhost", 5684, "serverfridge") //CoAP access
+	}
+	Goto waitCmd
+	
+	State waitCmd {
+		println("")
+		println("State waitCmd")
+		println("in attesa di un comando")
+    }
+	Transition t0 whenMsg addFood -> requestForCode //from sprint5
+
+	State requestForCode {
+		println("")
+		println("State requestForCode")
+		onMsg(addFood : addFood(FOODCODE)) {
+			["FoodCode = payloadArg(0).toString()"]
+			//println("foodcode = ${FoodCode}")
+			run itunibo.coap.fridge.put(FoodCode) //request coap
+		}
+	}
+	Transition t1 whenMsg answerFromFridgeCoap -> checkAnswer //da fridgecoap
+	
+	//qui controllo che la risposta alla mia domanda sia yes
+	//se è yes procedo, altrimenti non faccio nulla e invio un warning
+	State checkAnswer {
+		println("")
+		println("State checkAnswer")
+		onMsg(answerFromFridgeCoap : answerFromFridgeCoap(ANSWER)) {
+			["answer = payloadArg(0).toString()"]
+			//println("State checkAnswer - answer: ${answer}")
+		}	
+	}
+	Goto reachFridge if "(answer==\"yes\") " else handleWarning
+	
+	State reachFridge {
+		println("")
+		println("State reachFridge")
+		delay 500
+		
+		forward navi -m reachAppliance : reachAppliance(addfood, fridge)
+		println("Obiettivo FRIDGE")	
+	}
+	Transition t4 whenMsg fridgeReached -> inFridge
+	
+	State inFridge {
+		println("")
+		println("State inFridge")
+		forward fridge -m moveSpecificFoodOnRobot : moveSpecificFoodOnRobot($FoodCode) //a fridge
+		//nella prepare ho una lista, qui ho solo un elemento
+		delay 4000 //simulazione del takeFromFridge
+		println("Obiettivo TABLE")
+		forward navi -m reachTable : reachTable(addfood)
+	}
+	Transition t4 whenMsg tableReached -> inTable
+	
+	State inTable{
+		println("")
+		println("State inTable")
+		delay 1000
+		
+		forward kb -m moveFoodToDomesticResource : moveFoodToDomesticResource(table)
+		delay 5000
+		
+		println("Obiettivo RH")
+		forward navi -m goHome : goHome(addfood)
+	}
+	Transition t3 whenMsg homeReached -> endAddFood
+	
+	State endAddFood {
+		println("")
+		println("State endAddFood")
+		println("ADDFOOD terminata")
+		println("") 
+		forward kb -m expose : expose
+		delay 500
+		forward master5 -m foodAdded : foodAdded
+	}
+	Goto waitCmd
+	
+	State handleWarning {
+		//invia warning al maitre
+		delay 500
+		forward master5 -m warning : warning
+	}
+	Goto waitCmd
+	
+}   

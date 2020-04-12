@@ -1,0 +1,171 @@
+System sprint6  
+mqttBroker "localhost" : 1883 
+//per COAP cambiare indirizzo in resourceObserverCoapClient.kt 
+  
+/* --------------------------- */    
+// EVENTI
+/* --------------------------- */
+
+//Event local_<nome_evento> : <payload>(<Args>) -> evento mandato solo a quelli che vivono nello stesso contesto di chi lo ha lanciato
+//Event <nome_evento> : <payload>(<Args>) -> evento mandato a tutti gli attori del progetto
+
+//REQUISITO: the Maitre is able, at any time to use his/her smart-phone to consult the state of the room 
+Event consult : consult(N)
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+ 
+//CONTENT=contenuto da esporre
+ 
+//a rbr 
+Dispatch startTheSystem : startTheSystem(N)
+Dispatch prepare : prepare(N) //REQUISITO: command sent by the smart-phone of Maitre: prepare
+Dispatch clear : clear(N)  //REQUISITO: command sent by the smart-phone of Maitre: clear
+Dispatch addFood : addFood(FOODCODE)//REQUISITO: command sent by the smart-phone of Maitre: add food command, by specifying a food-code
+
+//da rbr
+Dispatch systemStarted : systemStarted(N) 
+Dispatch endPrepare : endPrepare(N)
+Dispatch endClear : endClear(N)
+Dispatch foodAdded : foodAdded(N)
+Dispatch warning : warning(FOODCODE) 
+
+Dispatch consultReplyKb : consultReplyKb(CONTENT) //da kb
+Dispatch consultReplyFridge : consultReplyFridge(CONTENT) //da fridge
+Dispatch endConsult : endConsult(N) //automsg
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */ 
+
+Context ctxSprint6 ip [host="localhost" port=9000] +mqtt
+Context ctxDummyForRoomButler ip [host="localhost" port=9008] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor rbr context ctxDummyForRoomButler
+
+//attore dello sprint
+QActor master6 context ctxSprint6 { 
+	["var consultKbFlag = false
+	  var consultFridgeFlag = false
+	  var consultKb = \"\"
+	  var ConsultFridge = \"\"
+    "] 
+	
+	State s0 initial {
+		println("MASTER 6 AVVIATO")
+		delay 1000
+		run itunibo.coap.fridge.createClient("localhost", 5684, "serverfridge") //CoAP access
+		forward rbr -m startTheSystem : startTheSystem
+	}
+	Transition t0 whenMsg systemStarted -> firstTask
+	
+	State firstTask {
+		println("")
+		println("State firstTask")
+		delay 1000
+		run itunibo.coap.fridge.put("expose") 
+		forward rbr -m prepare : prepare 
+	}
+	Transition t1 whenMsg endPrepare -> secondTask
+	     
+	State secondTask {
+		println("")
+		println("State secondTask")
+		run itunibo.coap.fridge.put("expose") 
+		delay 1000
+		//forward rbr -m addFood : addFood(c040) //codice inesistente
+		forward rbr -m addFood : addFood(c003) //codice esistente
+	} 
+	Transition t2 	whenMsg warning -> handleWarning
+					whenMsg foodAdded -> thirdTask
+	
+	State handleWarning {
+		println("")
+		println("State handleWarning")
+		onMsg(warning : warning(FOODCODE)) {
+			println("************** WARNING, il codice ${payloadArg(0).toString()} non esiste")	
+		}
+	}
+	Goto thirdTask
+	
+	State thirdTask{
+		println("")
+		println("State thirdTask")
+		emit consult : consult(master6)
+	}
+	Transition t3  whenMsg consultReplyKb -> handleConsult
+				   whenMsg consultReplyFridge -> handleConsult
+	 
+	State handleConsult{
+		println("")
+		println("State handleConsult")
+		
+		onMsg(consultReplyFridge : consultReplyFridge(CONTENT)){
+			["ConsultFridge = payloadArg(0).toString().replace( \"[/(/\",\"\").replace( \"/(/\",\" \").replace(\"]\", \"\").replace(\"), \", \"-\").replace(\"),\", \",\").replace(\"-\", \"), \")   //CHIEDERE AL PROF PER REPLACE
+			consultFridgeFlag = true"]
+			println("Arrivata risposta da Fridge")
+		}
+		onMsg(consultReplyKb : consultReplyKb(CONTENT)){
+			["consultKb = payloadArg(0).toString()
+			  consultKbFlag = true"]
+			  println("Arrivata risposta da Kb")
+		}
+		
+		if "consultKbFlag && consultFridgeFlag" {
+			["consultFridgeFlag = false
+			  consultKbFlag = false"]
+			forward master6 -m endConsult : endConsult
+		}
+	} 
+	//COME GESTIRE I FLAG DEI FORWARD IN RISPOSTA? NON POSSIAMO FARE TUTTE LE COMBINAZIONI... CHIEDERE AL PROF
+	Transition t10 whenMsg consultReplyKb and "!consultKbFlag && consultFridgeFlag" -> handleConsult
+				   whenMsg consultReplyFridge and "consultKbFlag && !consultFridgeFlag" -> handleConsult
+				   whenMsg endConsult -> fourthTask
+	  
+	State fourthTask{ 
+		println("")
+		println("State fourthTask")
+		 
+		println("")
+		println("------------------------------")
+		println("CONSULT")
+		println("------------------------------")
+		
+		println("Fridge: ${ConsultFridge}")
+		[" var i = 1 
+		var toPrint = \"\" "]
+		["for(list in consultKb.split(\"__\")){
+			toPrint = list.toString().replace(\"_\", \", \")
+			when(i) { 
+				1 -> println(\"Oggetti nel pantry: ${toPrint} \")
+				2 -> println(\"Oggetti sul table: ${toPrint} \")
+				3 -> println(\"Cibo sul table: ${toPrint} \")
+				4 -> println(\"Cibo sul robot: ${toPrint} \")
+				5 -> println(\"Oggetti sul robot: ${toPrint} \")
+				6 -> println(\"Oggetti nel dishwasher: ${toPrint} \")
+			}
+			i++
+		}"]
+		
+		delay 1000
+        forward rbr -m clear : clear
+	} 
+	Transition t5 whenMsg endClear -> lastTask
+	
+	State lastTask {
+		println("")
+		println("State lastTask")    
+		delay 500
+		run itunibo.coap.fridge.put("C000") 
+		run itunibo.coap.fridge.put("C006") 
+		run itunibo.coap.fridge.put("C040") //no
+		run itunibo.coap.fridge.put("expose") 
+		delay 1000
+		println("Finito sprint.")
+	}
+}

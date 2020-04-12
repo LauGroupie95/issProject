@@ -1,0 +1,116 @@
+System fridgecoap 
+mqttBroker "localhost" : 1883  
+//PORTA COAP FRIDGE: 5684 perché se no va in conflitto con la 5683 della Robotmind
+
+/* --------------------------- */ 
+// DISPATCH
+/* --------------------------- */
+
+//DR = domestic resource
+//FCL = food code list
+//NAMECODE = stringa formata da namecibo_codicecibo
+//NAMECODEQTA = stringa formata da namecibo_codicecibo_quantità
+Dispatch moveSpecificFoodOnRobot : moveSpecificFoodOnRobot(FCL) //da prepare e da addfood
+Dispatch moveFoodOnRobot : moveFoodOnRobot(DR, NAMECODE) //a kb
+Dispatch moveFoodToFridge : moveFoodToFridge(NAMECODEQTA) //da kb
+
+Dispatch handleAnswerReply : handleAnswerReply(ANSWER) //da fridgeCoap.kt (handleAnswer)
+Dispatch answerFromFridgeCoap : answerFromFridgeCoap(ANSWER) //a party (attore: addFood)
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+  
+Context ctxFridge ip [host="localhost" port=9004] +mqtt
+Context ctxDummyKb ip [host="localhost" port=9000] +mqtt
+Context ctxDummyParty ip [host="localhost" port=9005] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor addfood context ctxDummyParty
+ExternalQActor kb context ctxDummyKb
+
+//attore del frigo, che è anche un server coap
+QActor fridge context ctxFridge {
+	State s0 initial {
+		println("FRIDGE AVVIATO")
+		solve(consult("fridgekb.pl"))
+		run itunibo.coap.fridge.fridgeCoap.create( myself, "serverfridge" ) //CoAP access 
+	}
+	Goto wait
+	
+	State wait {
+		println("")
+		println("State wait")
+		println("in attesa di un comando")
+	}
+	Transition t0 	whenMsg moveSpecificFoodOnRobot -> takeFromFridge //da prepare e addfood
+	  				whenMsg moveFoodToFridge -> putInFridge //from kb
+	  				whenMsg handleAnswerReply -> coapAnswer //from fridgeCoap.kt (handleAnswer)
+	 
+	//questo stato serve quando la addfood mi chiede di verificare se esiste un codice
+	State coapAnswer {
+		onMsg(handleAnswerReply : handleAnswerReply(ANSWER)) { //from fridgeCoap.kt (handleAnswer)
+			["var Answer = payloadArg(0).toString()"]
+			//println("Coap answer: ${Answer}")
+			//invia answerFromFridgeCoap all'attore addfood (party.qak)
+			forward addfood -m answerFromFridgeCoap : answerFromFridgeCoap($Answer) //CHIEDERE AL PROF!!!!
+		}
+	} 
+	Goto wait
+	 
+	State takeFromFridge { //per add food lista ha un solo elemento
+		println("")
+		println("State takeFromFridge")
+		
+		onMsg(moveSpecificFoodOnRobot : moveSpecificFoodOnRobot(FCL)){ //da prepare e addfood
+			["var FoodCodeList = payloadArg(0).toString()"]
+			println("onMsg lista dei codici ricevuta: ${FoodCodeList}")
+	
+			["for(foodCode in FoodCodeList.split(\"_\")){"]
+				println("ricerca per codice ${foodCode}")
+				solve(iteminfridge(NAME,"${foodCode}",QTA))
+		    	ifSolved{
+		    		println("risolta ricerca codice-cibo")
+		    		["var name = getCurSol(\"NAME\").toString()
+					var qty = Integer.parseInt(getCurSol(\"QTA\").toString())-1
+					val ToSend = \"${name}_${foodCode}\" "] //riduco di 1 la qtà nel frigo
+		    		solve(retract(iteminfridge("${name}","${foodCode}",QTA)))
+		    		
+		    		if "qty != 0" { //se la qtà è 0, non facciamo l'assert di qtà nulla
+		    			["solve(\"assert(iteminfridge('${name}','${foodCode}',${qty}))\",\"\")"] //CHIEDERE AL PROF!!!!!!!!!!!!
+		    			//solve(assert(iteminfridge("${name}","${foodCode}","${qty}")))
+		    		}
+		    		forward kb -m moveFoodOnRobot : moveFoodOnRobot(fridge, $ToSend) //DOMANDA PER NATALI: NON SI POSSONO USARE PIù ARGS?
+	    		}
+			["}"]
+		}
+	}
+	Goto wait
+	
+	State putInFridge {
+		println("")
+		println("State putInFridge")
+		
+		onMsg(moveFoodToFridge : moveFoodToFridge(NAMECODEQTA)){ //da kb: robot deve rimettere cibo in frigo
+			["var nameFood = payloadArg(0).toString().split(\"_\").get(0).toString()
+			var codeFood = payloadArg(0).toString().split(\"_\").get(1).toString()				
+			var qtyRobot = payloadArg(0).toString().split(\"_\").get(2).toString()"]
+			println("${nameFood}, ${codeFood}, ${qtyRobot}")
+			  
+			solve(iteminfridge("${nameFood}","${codeFood}",QTA))
+			ifSolved{ //se c'è già il codice in frigo, aggiungi quantità
+				["var qtyFridge = Integer.parseInt(getCurSol(\"QTA\").toString())
+				var qtySum = Integer.parseInt(qtyRobot)+qtyFridge "]
+				solve(retract(iteminfridge(NAME,"${codeFood}",QTA)))
+				solve(assert(iteminfridge("${nameFood}","${codeFood}","${qtySum}")))
+			}
+			else { //la qtà di questo codice era terminata
+				solve(assert(iteminfridge("${nameFood}","${codeFood}","${qtyRobot}")))	
+			}
+		}
+	}
+	Goto wait
+}

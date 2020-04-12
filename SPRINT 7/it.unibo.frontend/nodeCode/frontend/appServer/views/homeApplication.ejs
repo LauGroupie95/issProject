@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Start application</title>
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		<script>
+	       	var socket  = io.connect();
+			socket.on('connect', function(){ console.log("socket connected");});
+		</script>
+		<!-- <script type="text/javascript" src="QActorWebUI.js"></script> -->
+	</head>
+	<body>
+		<div style="background-color: #FFFFFF">
+			<h2 align="center">BENVENUTO NEL SISTEMA</h2>
+			<center style="margin: 110px auto">
+					<table>	
+						<tr>
+							<td align="center">
+								<h4>PREMI START PER INIZIARE</h4>
+								<!-- Quando viene premuto il bottone "START", deve cambiare rotta in "/application"
+									 e deve inviare il messaggio "startTheSystem" -->
+								<form action="/startappl" method="post">
+									  <!-- <input type="submit" class="btn btn-primary" style="font-size:60px;"  value="START"> -->
+									  <button type="submit" class="btn btn-primary" style="font-size:60px;">START</button>
+								</form>
+							</td>
+						</tr>
+					</table>
+			</center>
+ 		</div>
+	</body>
+</html>

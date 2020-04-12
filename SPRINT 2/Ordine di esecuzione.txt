@@ -1,0 +1,6 @@
+1 robotmind
+2 scanning room
+3 navigator
+4 prepare
+5 clear
+6 sprint2

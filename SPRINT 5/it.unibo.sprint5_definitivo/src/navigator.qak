@@ -1,0 +1,300 @@
+System navigator 
+mqttBroker "localhost" : 1883 
+
+/* --------------------------- */ 
+// EVENTI
+/* --------------------------- */
+//Adesso è utilizzato per far sapere a navi la posizione del robot dopo l'esecuzione di scanningroom
+//Più avanti potrebbe essere utile anche per Start e Stop
+Event robotPosition : robotPosition(X,Y,D)	 
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+
+Dispatch modelUpdate : modelUpdate(TARGET,VALUE)
+Dispatch stepOk : stepOk(N)
+Dispatch stepFail : stepFail(R,T)
+//messaggi scambiato tra il planner e l'attore dello sprint per raggiungere una posizione specifica
+Dispatch startGoal : startGoal(X,Y)
+Dispatch reachAppliance : reachAppliance(MIT, NAME)
+Dispatch reachTable : reachTable(MIT)
+Dispatch goHome : goHome(MIT)
+//messaggi inviati al mittente dei messaggi precedenti quando si ha raggiunto tale posizione
+Dispatch pantryReached : pantryReached(N)
+Dispatch tableReached : tableReached(N)
+Dispatch fridgeReached : fridgeReached(N)
+Dispatch dishWasherReached : dishWasherReached(N)
+Dispatch homeReached : homeReached(N)
+//messaggio che riceve navigator per salvarsi le posizioni del tavolo e degli elettrodomestici
+Dispatch sendInfoPos : sendInfoPos(NAME,X,Y)
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+//contesto dell'attore attuale
+Context ctxNavigator ip [host="localhost" port=8038] +mqtt
+//contesto della mente
+Context ctxDummyForMind ip [host="localhost" port=8035] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+//richiamo all'attore resourcemodel, il quale è esterno al progetto
+ExternalQActor resourcemodel context ctxDummyForMind
+
+QActor navi context ctxNavigator {     
+	["val mapname     =\"roomMap\"
+	var Curmove     = \"\" 
+	var curmoveIsForward = false 
+	
+	//REAL ROBOT
+	//var StepTime   = 1000 	 
+	//var PauseTime  = 500 
+	
+	//VIRTUAL ROBOT
+	var StepTime   = 330	//for virtual
+	var PauseTime  = 300
+	
+	var PauseTimeL  = PauseTime.toLong()
+	
+	var GoalX = 0
+	var GoalY = 0
+	var ReachDestination = \"\"
+	
+	var Sender = \"\"
+	var Tback = 0
+	var Updated = false"]
+	
+	State s0 initial{
+		println("NAVI AVVIATO")
+		solve(consult("moves.pl"))
+		solve(consult("domesticAppliancesPos.pl"))
+ 		run itunibo.planner.plannerUtil.initAI() 
+	}
+	Goto waitCmd
+
+	State waitCmd{
+		println("in attesa di un comando")
+    }
+    Transition t0 whenMsg reachAppliance -> planPathToAppliance
+				  whenMsg reachTable -> planPathToTable
+				  whenMsg goHome -> returnHome
+				  whenMsg sendInfoPos -> savePos//messaggio per aggiornare la KB degli elettrodomestici + tavolo
+				  whenEvent robotPosition -> updateRobotPos//per aggiornare la posizione corrente del robot
+				  
+	State updateRobotPos{
+		println("")
+		println("State updateRobotPos")
+		if"Updated == false"{
+			println("Ricevuta posizione aggiornata del robot")
+			onMsg(robotPosition : robotPosition(X, Y, D)) {
+				run itunibo.planner.moveUtils.loadRoomMap( myself, mapname )	
+				["var x = payloadArg(0).toString().toInt()
+				var y = payloadArg(1).toString().toInt()
+				var d = payloadArg(2).toString()
+				itunibo.planner.plannerUtil.resetRobotPos(x, y, itunibo.planner.plannerUtil.getPosX(), itunibo.planner.plannerUtil.getPosY(), d )
+				Updated = true"]
+		  		run itunibo.planner.moveUtils.showCurrentRobotState()
+			 	["val MapStr =  itunibo.planner.plannerUtil.getMapOneLine()"]
+			 	forward resourcemodel -m modelUpdate : modelUpdate(roomMap,$MapStr)
+			}
+		}
+	}
+	Goto waitCmd
+				  
+	State savePos{
+		println("")
+		println("State savePos")
+		onMsg(sendInfoPos : sendInfoPos(NAME, X, Y)) {
+			println("Ricevuto un messaggio con posizione da salvare: ${payloadArg(0).toString()} ${payloadArg(1).toString()} ${payloadArg(2).toString()}")
+			["var salvaX = payloadArg(1).toInt()
+			var salvaY = payloadArg(2).toInt()
+			when( payloadArg(0).toString()) {
+		  		\"table\" -> "] solve(assert(table("${salvaX}", "${salvaY}")))
+		    	["\"fridge\" ->"] solve(assert(fridge("${salvaX}", "${salvaY}")))
+			    ["\"pantry\" ->"] solve(assert(pantry("${salvaX}", "${salvaY}")))
+			    ["\"dishWasher\" ->"] solve(assert(dishWasher("${salvaX}", "${salvaY}")))
+			["}"]				
+		}
+	}
+	Goto waitCmd
+	
+	//Inizia a pianificare il percorso all'elettrodomestico o mobile scelto	  			
+	State planPathToAppliance{
+		println("")
+		println("State planPathToAppliance")
+		onMsg(reachAppliance : reachAppliance(MIT, NAME)){
+			["Sender = payloadArg(0).toString()
+			ReachDestination = payloadArg(1).toString()"]
+			println("Ricevuto messaggio per raggiungere il ${ReachDestination}")
+			["var destinazioneProlog = ReachDestination + \"(X,Y)\""]
+			println("${destinazioneProlog}")
+			["solve(destinazioneProlog,\"\")"] 
+			ifSolved {
+				println("${ReachDestination}: ${getCurSol(\"X\")}, ${getCurSol(\"Y\")}")
+				["GoalX = Integer.parseInt(getCurSol(\"X\").toString().replace(\"'\", \"\"))
+			 	GoalY =  Integer.parseInt(getCurSol(\"Y\").toString().replace(\"'\", \"\"))"]
+				forward navi -m startGoal : startGoal
+			}	
+		}
+	}
+	Transition t1 whenMsg startGoal -> reachRequestedGoal
+	
+	State returnHome{
+		println("")
+		println("State returnHome")
+		onMsg(goHome : goHome(MIT)) {
+			println("Ricevuto messaggio per tornare ad RH")
+			["GoalX = 0
+		 	GoalY = 0
+			ReachDestination = \"RH\"
+			Sender = payloadArg(0).toString()"]
+			forward navi -m startGoal : startGoal(0, 0)
+		}
+	}
+	Transition t2 whenMsg startGoal -> reachRequestedGoal
+	
+	//Inizia a pianificare il percorso verso il tavolo
+	State planPathToTable{
+		println("")
+		println("State planPathToTable")
+		onMsg(reachTable : reachTable(MIT)){
+			["Sender = payloadArg(0).toString()"]
+		}
+		println("sono in planPathToTable")
+	 	["var bestNum = 100"]
+		solve(posTable(L))
+		//Si calcola la posizione ottimale del tavolo da raggiungere
+		ifSolved {
+			["var listaPosizioniTavolo = getCurSol(\"L\").toString().replace(\"[\", \"\")
+			listaPosizioniTavolo = listaPosizioniTavolo.toString().replace(\"]\", \"\")
+			listaPosizioniTavolo = listaPosizioniTavolo.replace(Regex(\"\"\"[$,.''(]\"\"\"), \"\").dropLast(1)
+			var listaPos = listaPosizioniTavolo.split(')')
+			for(i in listaPos){
+				var X = Integer.parseInt(i[0].toString())
+		 		var Y = Integer.parseInt(i[1].toString())"]
+		 		run itunibo.planner.plannerUtil.setGoal(X,Y)
+				run itunibo.planner.plannerUtil.doPlan()
+				["var num = itunibo.planner.plannerUtil.getActions().lastIndex
+				if(num < bestNum){
+					bestNum = num
+					GoalX = X
+					GoalY = Y
+				}
+			}"]
+		}
+		run itunibo.planner.plannerUtil.resetGoal(GoalX,GoalY)
+		["ReachDestination = \"table\""]
+		forward navi -m startGoal : startGoal
+	}
+	Transition t3 whenMsg startGoal -> reachRequestedGoal
+	 
+	State reachRequestedGoal{
+		println("")
+		println("State reachRequestedGoal")
+		["val MapStr =  itunibo.planner.plannerUtil.getMapOneLine()"]
+		forward resourcemodel -m modelUpdate : modelUpdate(roomMap,$MapStr)
+ 	}  
+	Goto makeThePlan
+	
+	State makeThePlan{
+		println("")
+		println("State makeThePlan")
+ 		run itunibo.planner.plannerUtil.setGoal(GoalX,GoalY)
+  		run itunibo.planner.moveUtils.doPlan( myself )
+   	} 
+	Goto executePlannedActions
+		
+	State executePlannedActions{
+		println("")
+		println("State executePlannedActions")
+		solve( retract( move(M) ) ) 
+		ifSolved {  
+			["Curmove = getCurSol(\"M\").toString() 
+              curmoveIsForward=(Curmove == \"w\")"]
+		} else {
+			["Curmove = \"\"; curmoveIsForward=false"]
+		}  
+ 	}
+	Goto checkAndDoAction if "(Curmove.length>0) " else controlDirection 
+
+ 	State goalOk {
+ 		println("")
+		println("State goalOk")		  
+ 		run itunibo.planner.moveUtils.showCurrentRobotState()
+	 	["val MapStr =  itunibo.planner.plannerUtil.getMapOneLine()"]
+	 	forward resourcemodel -m modelUpdate : modelUpdate(roomMap,$MapStr)
+	 	run itunibo.planner.moveUtils.showCurrentRobotState()
+	 	run itunibo.planner.plannerUtil.saveMap(mapname)
+	 	delay 500
+	 	["when(ReachDestination) {
+	  		\"table\" -> forward(\"tableReached\", \"tableReached\", \"$Sender\")
+	    	\"RH\" -> forward(\"homeReached\", \"homeReached\", \"$Sender\")
+		    \"pantry\" -> forward(\"pantryReached\", \"pantryReached\", \"$Sender\")
+		    \"fridge\" -> forward(\"fridgeReached\", \"fridgeReached\", \"$Sender\")
+			\"dishWasher\" -> forward(\"dishWasherReached\", \"dishWasherReached\", \"$Sender\")
+		}"]
+ 	}
+ 	Goto waitCmd
+  	
+	State checkAndDoAction{	 }
+	Goto doForwardMove if "curmoveIsForward" else doRotation
+	  
+	State doRotation{
+		println("")
+		println("State doRotation")
+		run itunibo.planner.moveUtils.rotate(myself, Curmove, PauseTime)
+  	}
+	Goto executePlannedActions 
+	
+ 	State doForwardMove{
+ 		println("")
+		println("State doForwardMove")
+ 		delayVar PauseTimeL
+ 		run itunibo.planner.moveUtils.attemptTomoveAhead(myself, StepTime)
+	} 
+	Transition t4 whenMsg stepOk   -> handleStepOk   
+				  whenMsg stepFail -> hadleStepFail 	
+    	
+	State handleStepOk{
+		println("")
+		println("State handleStepOk")
+ 		run itunibo.planner.moveUtils.updateMapAfterAheadOk(myself)
+	}
+	Goto executePlannedActions
+	
+ 	State hadleStepFail{  
+ 		println("")
+		println("State handleStepFail")
+		onMsg(stepFail : stepFail(Obs,Time)) { 
+			["Tback=payloadArg(1).toString().toInt() / 4"]
+ 		}
+ 		run itunibo.planner.moveUtils.backToCompensate(myself, Tback, PauseTime)   
+ 		run itunibo.planner.moveUtils.updateMapAfterAheadOk(myself)
+	}
+	Goto executePlannedActions
+	
+	State controlDirection{
+		println("")
+		println("State controlDirection")
+		["var goalDir = \"\"
+		when(ReachDestination) {
+	    	\"RH\" -> goalDir = \"downDir\" 
+		    \"pantry\" -> goalDir = \"downDir\"
+		    \"fridge\" -> goalDir = \"upDir\"
+		    \"table\" -> goalDir = \"rightDir\"
+			\"dishWasher\" -> goalDir = \"downDir\"
+		}
+
+		//Da gestire diversamente se vogliamo simulare la direzione del robot vicino agli elettrodomestici
+
+		while(itunibo.planner.moveUtils.getDirection(myself) != goalDir){
+			itunibo.planner.moveUtils.rotateLeft(myself, PauseTime)
+			delay(500)
+		}"]
+	}
+	Goto goalOk
+}	

@@ -1,0 +1,117 @@
+System clear 
+mqttBroker "localhost" : 1883
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */  
+  
+//DR = domestic resource
+//NAMECODE: stringa composta da nomecibo_codicecibo
+
+//REQUISITO: command sent by the smart-phone of Maitre: clear
+Dispatch clear : clear(N) //da rbr 
+Dispatch endClear : endClear(MIT) //a rbr
+
+//a navi
+Dispatch goHome : goHome(MIT)
+Dispatch reachAppliance : reachAppliance(MIT, NAME)
+Dispatch reachTable : reachTable(MIT)
+
+//da navi
+Dispatch tableReached : tableReached(N)
+Dispatch fridgeReached : fridgeReached(N)
+Dispatch dishWasherReached : dishWasherReached(N)
+Dispatch homeReached : homeReached(N)
+
+//a kb
+Dispatch moveObjToDomesticResource : moveObjToDomesticResource(DR) 
+Dispatch moveFoodToDomesticResource : moveFoodToDomesticResource(DR)
+Dispatch moveObjOnRobot : moveObjOnRobot(DR)
+Dispatch moveFoodOnRobot : moveFoodOnRobot(DR, NAMECODE)
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+Context ctxClear ip [host="localhost" port=9005] +mqtt
+Context ctxDummyForNavigator ip [host="localhost" port=9002] +mqtt
+Context ctxDummyForKb ip [host="localhost" port=9003] +mqtt
+Context ctxDummyForRoomButler ip [host="localhost" port=9008] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor navi context ctxDummyForNavigator
+ExternalQActor kb context ctxDummyForKb
+ExternalQActor rbr context ctxDummyForRoomButler
+
+//Attore incaricato di svolgere la CLEAR
+QActor clear context ctxClear {
+	["var inTable = 0"]
+	
+	State s0 initial{
+		println("CLEAR AVVIATA")
+	}
+	Goto waitCmd
+	
+	State waitCmd{
+		println("in attesa di un comando")
+    }
+	Transition t0 whenMsg clear -> reachTable
+
+	State reachTable{
+		println("")
+		println("State doClear")
+		println("Obiettivo table")
+		forward navi -m reachTable : reachTable(clear)
+	}  
+	Transition t1 whenMsg tableReached -> inTable
+	
+	State inTable{
+		println("")
+		println("State inTable")
+		delay 1000
+		["if(inTable == 0){"] //prima volta che arrivo al tavolo durante la CLEAR
+			forward kb -m moveObjOnRobot : moveObjOnRobot(table)
+			delay 1000
+			
+			println("Obiettivo DISHWASHER")
+			forward navi -m reachAppliance : reachAppliance(clear, dishWasher)
+			["inTable = inTable + 1
+		}else{"] //seconda volta che arrivo al tavolo durante la CLEAR
+			forward kb -m moveFoodOnRobot : moveFoodOnRobot(table, all_all) //all_all è una stringa fittizia
+			delay 1000
+			  
+			println("Obiettivo FRIDGE")
+			forward navi -m reachAppliance : reachAppliance(clear, fridge)
+		["}"]
+	} 
+	Transition t2 whenMsg fridgeReached -> inFridge
+				  whenMsg dishWasherReached -> inDishWasher
+	
+	State inDishWasher{
+		println("")
+		println("State inDishWasher")
+		delay 1000
+		forward kb -m moveObjToDomesticResource : moveObjToDomesticResource(dishwasher)
+	}
+	Goto reachTable
+	 
+	State inFridge{
+		println("")
+		println("State inFridge")
+		forward kb -m moveFoodToDomesticResource : moveFoodToDomesticResource(fridge)
+		delay 1000
+		println("Obiettivo RH")
+		forward navi -m goHome : goHome(clear)
+	}
+	Transition t4 whenMsg homeReached -> endClear
+	
+	State endClear{
+		println("")
+		println("State endClear")
+		forward rbr -m endClear : endClear(clear)
+		println("CLEAR terminata")
+	}
+}  

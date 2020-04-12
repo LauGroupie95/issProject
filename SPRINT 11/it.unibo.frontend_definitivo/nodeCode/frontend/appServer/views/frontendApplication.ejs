@@ -1,0 +1,110 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Application</title>
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+		
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="javascripts/engine.js"></script>
+	</head>
+	<body>
+		<center>
+			<div>
+				<h2 id="title" align="center">RBR CONSOLE</h2>
+				<table>
+					<tr>
+						<td class="td">
+							<form action="/prepare" class="actions" method="post" align="center" id="prepareform">
+								  <button type="submit" onclick="onClickPrepare()" class="btn btn-success buttons" id="preparebutton" disabled>PREPARE</button>
+							</form>
+							<form action="/clear" method="post" align="center" id="clearform">
+								  <button type="submit" onclick="onClickClear()" class="btn btn-success buttons" id="clearbutton" disabled>CLEAR</button>
+							</form>
+						</td>
+						<td class="td">
+							<label for="foodcode" align="center">Select food code...</label><br/>
+							<form action="/addfood" method="post" id="foodcodeform">				    
+								<select id="foodcode-dropdown" name="foodcode"></select>
+								<button type="submit" formaction="/answer" onclick="onClickAnswer(document.getElementById('foodcode-dropdown').options[document.getElementById('foodcode-dropdown').selectedIndex].value)"
+									class="btn btn-default buttons" id="answerbutton" align="left" disabled>REQUEST</button>
+								<button type="button" onclick="onClickAddFood(document.getElementById('foodcode-dropdown').options[document.getElementById('foodcode-dropdown').selectedIndex].value)"
+									class="btn btn-default buttons" id="addfoodbutton" align="right" disabled>ADD FOOD</button>
+							</form>
+						</td>
+						<td class="td">
+							<form action="/stop" class="actions" method="post" align="center" id="stopform">
+								<button type="submit" onclick="onCliskStop()" class="btn btn-danger buttons" id="stopbutton" disabled><i class="fas fa-stop"></i> STOP</button>
+							</form>
+							<form action="/reactivate" method="post" align="center" id="reactivateform">
+								  <button type="submit" onclick="onClickReactivate()" class="btn btn-danger buttons" id="reactivatebutton" disabled><i class="fas fa-play"></i> REACTIVATE</button>
+							</form>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="3" id="robotStateArea">
+							<!-- Parte delle stampe -->
+							<div id="stateArea">
+								<div>
+									 <b>ROBOT POSITION</b>: <span id="robotPosition"></span>
+								  </div>
+								<div>
+									  <b>CURRENT TASK</b>: <span id="currentTask"></span>
+								</div>
+								<div>
+									  <b>CURRENT GOAL</b>: <span id="currentGoal"></span>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</table>
+				<table>
+					<tr>
+						<td class="td" rowspan="2">
+							<span>TABLE</span>
+							<textarea id="textareaOutputTable" readonly></textarea>
+						</td>
+						<td class="td" rowspan="2">
+							<span>FRIDGE</span>
+							<textarea id="textareaOutputFridge" readonly></textarea>
+						</td>
+						<td class="td" rowspan="2">
+							<span>ROBOT</span>
+							<textarea id="textareaOutputRobot" readonly></textarea>
+						</td>
+						<td class="td">
+							<span>PANTRY</span>
+							<textarea id="textareaOutputPantry" readonly></textarea>
+						</td>
+					</tr>
+					<tr>
+						<td class="td">
+							<span>DISHWASHER</span>
+							<textarea id="textareaOutputDishWasher" readonly></textarea>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</center>
+		
+		<!-- Modal formato codice errato -->
+		<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+			  <div class="modal-content">
+				<div class="modal-header">
+				  <h5 class="modal-title" id="titleModal"></h5>
+				</div>
+				<div class="modal-body">
+					<p id="bodyModal"></p>
+				</div>
+				<div class="modal-footer">
+				  <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
+				</div>
+			  </div>
+			</div>
+		</div>
+	</body>
+</html>

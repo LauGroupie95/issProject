@@ -1,0 +1,72 @@
+/*
+ * Una possibile estensione potrebbe essere la seguente:
+ * Greedy dice alla kb che vuole mangiare un determinato cibo.
+ * 1) Se il cibo c’è, si procede come prima.
+ * 2) Se il cibo non c’è, si fa una richiesta al maitre che appare sul frontend con scritto “Puoi aggiungere questo cibo nel buffet?”,
+ * 	  con una popup o qualcosa del genere.
+ * 	  a) Se il maitre non accetta, non succede niente.
+ * 	  b) Se il maitre accetta, si scatena automaticamente l’addfood senza che il maitre debba scrivere il codice nell’input text e prema addFood:
+ * 		 basta che prema OK nella popup.
+ */
+
+System guest 
+mqttBroker "localhost" : 1883  
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+
+//da rbr
+Dispatch startEating : startEating(N)
+Dispatch stopEating : stopEating(N)
+
+//a kb
+Dispatch ate : ate(FOODCODE) //supponiamo che stia mangiando un cibo alla volta
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+Context ctxGuest 				ip [host="localhost" port=9009] +mqtt
+Context ctxDummyForRoomButler 	ip [host="localhost" port=9008] +mqtt
+Context ctxDummyForKb 			ip [host="localhost" port=9003] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor kb 	context ctxDummyForKb
+ExternalQActor rbr 	context ctxDummyForRoomButler
+
+QActor greedy context ctxGuest {
+	
+	State s0 initial {
+		println("GREEDY AVVIATO")
+	}
+	Goto waitCmd
+	
+	State waitCmd {
+		println("in attesa di un comando")
+    }
+	Transition t0 whenMsg startEating -> eating
+	
+	State eating {
+		println("")
+		println("State eating")
+		//random 0 a 15 perché i nostri codici vanno da c000 a c015
+		["
+		val codeRandom = (0..15).random()
+		var Foodcode = if (codeRandom < 10) \"c00\"+codeRandom else \"c0\"+codeRandom
+		"]
+		println("Foodcode generato: ${Foodcode}")
+		forward kb -m ate : ate($Foodcode)
+	}
+	Transition t1 whenTime 10000 -> eating
+				  whenMsg stopEating -> endEating
+
+	State endEating {
+		println("")
+		println("State endEating")
+	}
+	
+}

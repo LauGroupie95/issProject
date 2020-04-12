@@ -1,0 +1,162 @@
+System fridgecoap 
+mqttBroker "localhost" : 1883  
+//PORTA COAP FRIDGE: 5684 perché se no va in conflitto con la 5683 della Robotmind
+
+/* --------------------------- */ 
+// DISPATCH
+/* --------------------------- */
+
+//da prepare e da addfood
+Dispatch moveSpecificFoodOnRobot : moveSpecificFoodOnRobot(FCL)		//FCL = food code list
+
+//a kb
+Dispatch moveFoodOnRobot : moveFoodOnRobot(DR, NAMECODE) 			//(DR = domestic resource, NAMECODE = stringa formata da namecibo_codicecibo)
+
+//da kb
+Dispatch moveFoodToFridge : moveFoodToFridge(NAMECODEQTA)			//NAMECODEQTA = stringa formata da namecibo_codicecibo_quantità
+
+//da fridgeCoap.kt (handleAnswer)
+Dispatch handleAnswerReply : handleAnswerReply(ANSWER)				//ANSWER = yes/no	
+
+//a party (attore: addFood)
+Dispatch answerFromFridgeCoap : answerFromFridgeCoap(ANSWER)		//ANSWER = yes/no		
+
+//da rbr
+Dispatch log : log(N)
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+   
+Context ctxFridge 			ip [host="localhost" port=9006] +mqtt
+Context ctxDummyForKb 		ip [host="localhost" port=9003] +mqtt
+Context ctxDummyForParty 	ip [host="localhost" port=9007] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor addfood 	context ctxDummyForParty
+ExternalQActor kb 		context ctxDummyForKb
+
+//attore del frigo, che è anche un server coap
+QActor fridge context ctxFridge {
+	State s0 initial{
+		println("FRIDGE AVVIATO")
+		solve(consult("fridgekb.pl"))
+		run itunibo.coap.fridge.fridgeCoap.create(myself, "serverfridge") //CoAP access
+	}
+	Goto wait
+	
+	State wait{
+		println("")
+		println("State wait")
+		println("in attesa di un comando")
+	} 
+	Transition t0 	whenMsg moveSpecificFoodOnRobot -> takeFromFridge 	//da prepare e addfood
+	  				whenMsg moveFoodToFridge -> putInFridge 			//da kb
+	  				whenMsg handleAnswerReply -> coapAnswer 			//da fridgeCoap.kt (handleAnswer)
+	  				whenMsg log -> writeLog								//da rbr
+	 
+	//addfood chiede di verificare se esiste un codice
+	State coapAnswer{
+		println("")
+		println("State coapAnswer")
+		onMsg(handleAnswerReply : handleAnswerReply(ANSWER)) {
+			["
+			var Answer = payloadArg(0).toString()
+			"]
+			println("answer = ${Answer}")
+			forward addfood -m answerFromFridgeCoap : answerFromFridgeCoap($Answer)
+		}
+	} 
+	Goto wait
+	
+	State takeFromFridge { //NOTA: per addFood lista ha un solo elemento
+		println("")
+		println("State takeFromFridge")
+		
+		onMsg(moveSpecificFoodOnRobot : moveSpecificFoodOnRobot(FCL)){ //da prepare e da addfood
+			["
+			var FoodCodeList = payloadArg(0).toString().replace(\"[\",\"\").replace(\"]\",\"\")
+			"]
+			println("onMsg lista dei codici ricevuta: ${FoodCodeList}")
+			[" 
+			for(foodCode in FoodCodeList.split(\",\")){
+			"]
+				println("ricerca per codice ${foodCode}")
+				solve(iteminfridge(NAME,"${foodCode}",QTA))
+		    	ifSolved{
+		    		println("risolta ricerca codice-cibo")
+		    		["
+					var name = getCurSol(\"NAME\").toString()
+					var qty = Integer.parseInt(getCurSol(\"QTA\").toString())-1	//riduco di 1 la qtà nel frigo
+					val ToSend = \"${name}_${foodCode}\"
+					"]
+		    		solve(retract(iteminfridge("${name}","${foodCode}",QTA)))
+		    		run utils.writeLogKb("-.FD.${name},${foodCode},${qty}")
+		    		
+		    		if "qty != 0" { //se la qtà è 0, non facciamo l'assert di qtà nulla
+		    			["
+						solve(\"assert(iteminfridge('${name}','${foodCode}',${qty}))\",\"\")
+						"]
+		    			run utils.writeLogKb("+.FD.${name},${foodCode},${qty}")
+		    		}
+		    		forward kb -m moveFoodOnRobot : moveFoodOnRobot(fridge, $ToSend)
+	    		}
+			["
+			}
+			"] 
+		}
+		run itunibo.frontend.frontendSupport.updateFrontend(myself, "fridge()")
+	}
+	Goto wait
+	
+	State putInFridge{
+		println("")
+		println("State putInFridge")
+		
+		onMsg(moveFoodToFridge : moveFoodToFridge(NAMECODEQTA)){ //da kb: robot deve rimettere cibo in frigo
+			["
+			var nameFood = payloadArg(0).toString().split(\"_\").get(0).toString()
+			var codeFood = payloadArg(0).toString().split(\"_\").get(1).toString()				
+			var qtyRobot = payloadArg(0).toString().split(\"_\").get(2).toString()
+			"]
+			println("${nameFood}, ${codeFood}, ${qtyRobot}")
+			  
+			solve(iteminfridge("${nameFood}","${codeFood}",QTA))
+			ifSolved{ //se c'è già il codice in frigo, aggiungi quantità
+				["
+				var qtyFridge = Integer.parseInt(getCurSol(\"QTA\").toString())
+				var qtySum = Integer.parseInt(qtyRobot)+qtyFridge
+				"]
+				solve(retract(iteminfridge(NAME,"${codeFood}",QTA)))
+				run utils.writeLogKb("-.FD.${nameFood},${codeFood},${qtyFridge}")
+				
+				["
+				solve(\"assert(iteminfridge('${nameFood}','${codeFood}',${qtySum}))\",\"\")
+				"]
+				run utils.writeLogKb("+.FD.${nameFood},${codeFood},${qtySum}")
+			}
+			else { //la qtà di questo codice era terminata
+				["
+				solve(\"assert(iteminfridge('${nameFood}','${codeFood}',${qtyRobot}))\",\"\")
+				"]
+				run utils.writeLogKb("+.FD.${nameFood},${codeFood},${qtyRobot}")	
+			}
+		}
+		//Siccome fridgecoap è un server, forziamo la richiesta CoAP "expose" dal frontend
+		run itunibo.frontend.frontendSupport.updateFrontend(myself, "fridge()")
+	}
+	Goto wait
+
+ 	State writeLog{
+ 		println("") 
+		println("State writeLog")
+		solve(exposeFridge(F))
+		ifSolved {
+			run utils.writeLogKb("FD: ${getCurSol(\"F\").toString()}")
+		}
+ 	}
+ 	Goto wait
+}

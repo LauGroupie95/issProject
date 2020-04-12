@@ -1,0 +1,298 @@
+System sprint0
+
+mqttBroker "localhost" : 1883
+ 
+Event  sonarRobot     : sonar( DISTANCE )	     //from  sonar on robot 
+Event  sonar          : sonar(SONAR, DISTANCE)	 //from sonar in the robot environment          
+
+Event  local_modelChanged   : modelChanged( TARGET, VALUE )
+Event  modelContent   : content( VALUE ) 
+
+Dispatch robotCmd     : robotCmd( CMD )				  //sent by the mind to the basicrobot
+
+Dispatch modelChange  : modelChange( TARGET, VALUE )  //force a resource-model change
+Dispatch modelUpdate  : modelUpdate( TARGET, VALUE )  //sent by the mind
+ 
+Dispatch stopAppl      : stopAppl( CMD )
+Dispatch startAppl     : startAppl( CMD )
+
+Dispatch onestep       : onetstep(X)
+Dispatch changeCol     : changeCol(X)
+Dispatch stepOk        : stepOk(X)
+Dispatch stepFail      : stepFail(R,T) //R=ok | obstacle, T = time
+  
+Context ctxRobotMind     ip [host="localhost" port=8035]      +mqtt
+
+//resourcemodel non modificato
+QActor resourcemodel context ctxRobotMind{
+["var dobackstep = false"]
+	State s0 initial {		
+		solve( consult("sysRules.pl")	 )       
+		solve( consult("resourceModel.pl")	 )
+		solve( showResourceModel ) 		
+		run itunibo.coap.modelResourceCoap.create( myself, "resourcemodel" ) //CoAP access
+	} 
+	Goto waitModelChange
+	 
+	State waitModelChange{ }
+	Transition t0 whenMsg modelChange -> changeModel
+	              whenMsg modelUpdate -> updateModel
+
+	State updateModel{  
+		onMsg( modelUpdate : modelUpdate(robot,V ) ) {
+			run itunibo.robot.resourceModelSupport.updateRobotModel( myself, payloadArg(1) )
+		}
+		onMsg( modelUpdate : modelUpdate(sonarRobot,V ) ) {
+			run itunibo.robot.resourceModelSupport.updateSonarRobotModel( myself, payloadArg(1) )
+		}
+	} 
+    Goto  waitModelChange
+    
+	State changeModel{  
+		printCurrentMessage 
+		//ROBOT MOVE
+		onMsg( modelChange : modelChange( robot,V ) ) { // V= w | ...
+			run itunibo.robot.resourceModelSupport.updateRobotModel( myself, payloadArg(1) )
+			emit local_modelChanged : modelChanged(  robot,  $payloadArg(1))  //for the robotmind
+		} 
+		//SONAR DATA  
+		onMsg( modelChange : modelChange( sonarRobot,V ) ) { // V= w | ...
+			run itunibo.robot.resourceModelSupport.updateSonarRobotModel( myself, payloadArg(1) )
+		}
+	}  
+	Goto  waitModelChange
+}
+
+//sonarhandler non modificato
+QActor sonarhandler context ctxRobotMind{  
+["var LastSonarDistance = 0
+  val amplify=5
+"]
+ 	State init initial{
+		println("sonarhandler STARTS ... ")
+	}         
+	Goto waitForEvents 
+	   
+	State waitForEvents{  }      
+   	Transition t0 whenEvent sonar      ->  handleSonar
+   	              whenEvent sonarRobot ->  handleSonar
+   	               
+ 	State handleSonar{                      
+ 		//printCurrentMessage                                        
+ 		onMsg ( sonar  : sonar( SONAR, DISTANCE ) ){    			
+			[" val D = Integer.parseInt( payloadArg(1) ) * amplify"] //AMPLIFY
+ 		}
+ 		onMsg ( sonarRobot : sonar( DISTANCE ) ){     
+			[" val D = Integer.parseInt( payloadArg(0) ) * amplify"] //AMPLIFY
+			
+			if "LastSonarDistance  != D" {
+				forward resourcemodel -m modelChange : modelChange(sonarRobot,$payloadArg(0))
+			}
+			if "LastSonarDistance  != D" {["LastSonarDistance=D"]} 
+ 		}
+ 	} 
+ 	Goto waitForEvents
+
+}
+
+//basicrobot non modificato
+QActor basicrobot context ctxRobotMind {
+	State s0 initial {
+		solve( consult("basicRobotConfig.pl") )   
+ 		solve( robot(R, PORT) )  //R = virtual | realmbot | realnano
+  		ifSolved{ 
+  			println( "USING ROBOT : ${getCurSol(\"R\")},  port= ${getCurSol(\"PORT\")} " )
+  		 }else {
+  		 	println("no robot")
+   		}
+   		ifSolved{
+   			run itunibo.robot.robotSupport.create(myself, @R, @PORT )
+   		} 
+	}
+	Goto waitCmd
+	
+	State waitCmd {
+		delay 300
+	}
+	Transition t0 whenMsg robotCmd -> handleCmd
+	
+	State handleCmd {
+		printCurrentMessage
+		onMsg(robotCmd : robotCmd(MOVE)){
+			run itunibo.robot.robotSupport.move("msg(${payloadArg(0)})")
+		}
+	}
+	Goto waitCmd
+}
+
+/*
+ * INIT ROBOT = (0,0,1) direzione sud
+ * Esplora la stanza da sinistra a destra, senza occuparsi del tavolo
+ * GOAL = posizione (2,1,1)
+ * robotmindapplication = business logic che demanda a onecellforward l'avanzamento
+ * */ 
+QActor robotmindapplication context ctxRobotMind{
+	[" var colonnadispari = false"] //false perché inizialmente è 0
+	State s0 initial {	  
+		run itunibo.robot.utils.resetFilePos("filePos") //resetta il file con la posizione finale
+		solve( consult("sysRules.pl")	 )       
+		solve( consult("floorMap.pl")	 )
+		println("&&&  robotmindapplication STARTED")	
+	}
+	Goto waitCmd
+	 
+	State waitCmd {		
+		forward robotmindapplication -m startAppl : startAppl(inizia)
+	} 
+	Transition t0 whenMsg stopAppl  -> stopApplication 
+		          whenMsg startAppl -> startApplication 
+	
+	State stopApplication{
+		println("&&& robotmindapplication stopApplication ... ")			
+		forward resourcemodel  -m modelChange : modelChange(robot,h)
+ 		forward onecellforward -m stopAppl : stopAppl(user)
+	}
+	
+	State startApplication{
+		printCurrentMessage
+		solve( initMap(sud) )
+	} 
+	Goto doApplication
+	
+	State doApplication{
+		solve( cell(2,1,1) ) //obiettivo da raggiungere
+		ifSolved{
+			solve( direction(sud) ) //obiettivo da raggiungere
+			ifSolved {
+				println("TROVATO --- FINISCO---")	
+				//se ho finito, scrivo sul file la posizione finale
+				run itunibo.robot.utils.writeLastPos( myself, "2", "1", "sud", "filePos" )
+				forward robotmindapplication -m stopAppl : stopAppl( stop )
+			}
+		}
+		else {
+			forward onecellforward -m onestep : onestep		
+		}
+	}
+	Transition t0   whenMsg stopAppl -> stopApplication 
+					whenMsg stepOk   -> hadleStepOk	//risposta che arriva da onecellforward
+					whenMsg stepFail -> hadleStepFail //risposta che arriva da onecellforward
+					whenMsg stopAppl  -> stopApplication 
+					
+	State hadleStepOk{
+		println("&&& robotmindapplication step ok")	
+		solve( updateMapAfterStep )
+		delay 500 
+	}
+	Goto doApplication
+	 
+	State hadleStepFail{
+		printCurrentMessage		
+		println("&&& robotmindapplication step failed")
+		
+		if "colonnadispari == false"{ //se la colonna è pari, si gira a sinistra
+			forward resourcemodel -m modelChange : modelChange(robot,a)
+			solve( changeDirectionA )
+			solve( direction(D) )
+			forward basicrobot -m robotCmd : robotCmd( a )
+			delay 1000
+			
+			//forward onecellforward -m onestep : onestep	
+			
+			//forward resourcemodel -m modelChange : modelChange(robot,a)
+			forward onecellforward -m changeCol : changeCol
+			solve( updateMapAfterStep )
+
+			delay 1000
+			
+			forward resourcemodel -m modelChange : modelChange(robot,a)
+			solve( changeDirectionA )
+			solve( direction(D) )
+			forward basicrobot -m robotCmd : robotCmd( a )
+			delay 1000
+			["colonnadispari=true"]
+			
+		}
+		else{ //se la colonna è dispari, si gira a destra
+			forward resourcemodel -m modelChange : modelChange(robot,d)
+			solve( changeDirectionD )
+			solve( direction(D) )
+			ifSolved{
+				println("\\nD change con d=${getCurSol(\"D\")}\\n")
+			}
+			
+			forward basicrobot -m robotCmd : robotCmd( d )
+			delay 1000
+			
+			forward onecellforward -m changeCol : changeCol
+			solve( updateMapAfterStep ) 		
+			delay 1000
+			
+			forward resourcemodel -m modelChange : modelChange(robot,d)
+			solve( changeDirectionD )
+			solve( direction(D) )
+			ifSolved{
+				println("\\nD change con d=${getCurSol(\"D\")}\\n")
+			}
+			forward basicrobot -m robotCmd : robotCmd( d )
+			delay 1000
+			["colonnadispari=false"]
+		}
+		["println(colonnadispari)"]
+	}
+	Goto doApplication
+}
+
+QActor onecellforward context ctxRobotMind {
+[" var foundObstacle = false"]  
+	State s0 initial {	   
+		println("&&& robotmindapplication onecellforward waits ... ")	
+		["foundObstacle = false "]
+	}
+	Transition t0 whenMsg onestep -> doMoveForward
+				whenMsg changeCol -> changeColumn
+	
+	//Stato creato apposta per effettuare lo spostamento da una colonna ad un altra
+	//Non gestisce il caso in cui incontra un muro durante il movimento di cambio colonna
+	State changeColumn{
+		forward resourcemodel -m modelChange : modelChange(robot,w)
+		forward basicrobot -m robotCmd : robotCmd( w )
+		delay 300
+		forward resourcemodel -m modelChange : modelChange(robot,h)
+		forward basicrobot -m robotCmd : robotCmd( h )
+		println("&&& changeColumn step ok")	
+	}
+	Goto s0
+	
+	State doMoveForward{
+		forward resourcemodel -m modelChange : modelChange(robot,w)
+		forward basicrobot -m robotCmd : robotCmd( w )
+	}
+	Transition t0 whenTime 300           -> endDoMoveForward
+	 			  whenMsg stopAppl       -> s0					
+		          whenEvent sonarRobot   -> handleSonarRobot
+		
+	State endDoMoveForward{
+		forward resourcemodel -m modelChange : modelChange(robot,h)
+		forward basicrobot -m robotCmd : robotCmd( h )
+		printCurrentMessage 
+		println("&&& robotmindapplication endDoMoveForward ")
+		forward robotmindapplication -m stepOk : stepOk  //answer
+	}
+	Goto s0
+	
+	State handleSonarRobot { 
+		printCurrentMessage
+ 		onMsg ( sonarRobot : sonar( DISTANCE ) ){     
+			["val distance = Integer.parseInt( payloadArg(0) ) 
+              foundObstacle = (distance<20) "]  
+   		}
+	}
+	Goto stepFail if "foundObstacle" else s0
+	
+	State stepFail{
+		println("&&& robotmindapplication stepfail ")
+		forward robotmindapplication -m stepFail : stepFail(obstacle,150) //answer (time todo)		
+	}
+	Goto s0
+}
