@@ -1,3 +1,2 @@
-cd nodeCode
-cd frontend
+cd nodeCode/frontend
 npm install
