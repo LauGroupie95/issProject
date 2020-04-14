@@ -19,8 +19,8 @@ Informazioni utili:
 Per lanciare correttamente il nostro sistema virtuale occorre:
 1. Clonare la repository
 2. Aprire in Eclipse i seguenti due progetti:
-&nbsp&nbsp - Sprint/SPRINT 11/**it.unibo.sprint11_definitivo**
-&nbsp&nbsp - Sprint/SPRINT 11/**it.unibo.eclipse.qak.robotMinds19**
+    * Sprint/SPRINT 11/**it.unibo.sprint11_definitivo**
+    * Sprint/SPRINT 11/**it.unibo.eclipse.qak.robotMinds19**
 3. Eseguire a linea di comando "gradle build eclipse" per iniettare le dipendenze nei progetti
 4. Installare a linea di comando con "npm install" il virtual environment nel progetto 
 /Sprint/SPRINT 11/**it.unibo.robots19/node/WEnv**
