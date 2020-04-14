@@ -2,7 +2,7 @@
 Progetto per il corso di Ingegneria dei Sistemi Software M tenuto dal Prof. Antonio Natali.
 
 
-# Descrizione
+## Descrizione
 L'obiettivo del progetto è descritto nel documento "TFBO19ISS.pdf" che si trova in /Documenti.
 
 Informazioni utili:
@@ -15,25 +15,25 @@ Informazioni utili:
 - Il frontend è sviluppato interamente in NodeJS.
 - Come metodo organizzativo agile abbiamo utilizzato SCRUM: tutti i nostri sprint sono disponibili in /Sprint. Abbiamo raggiunto il risultato finale attraverso lo sviluppo incrementale.
 
-# Istruzioni per l'ambiente virtuale
+## Istruzioni per l'ambiente virtuale
 Per lanciare correttamente il nostro sistema virtuale occorre:
 1. Clonare la repository
-2. Aprire in Eclipse i seguenti due progetti: 
-  2a. Sprint/SPRINT 11/**it.unibo.sprint11_definitivo**
-  2b. Sprint/SPRINT 11/**it.unibo.eclipse.qak.robotMinds19**
+2. Aprire in Eclipse i seguenti due progetti:
+  2. Sprint/SPRINT 11/**it.unibo.sprint11_definitivo**
+  2. Sprint/SPRINT 11/**it.unibo.eclipse.qak.robotMinds19**
 3. Eseguire a linea di comando "gradle build eclipse" per iniettare le dipendenze nei progetti
 4. Installare a linea di comando con "npm install" il virtual environment nel progetto /Sprint/SPRINT 11/**it.unibo.robots19/node/WEnv**
 5. Ripetere lo stesso procedimento del punto 4 per il frontend: /Sprints/SPRINT 11/**it.unibo.frontend_definitivo**
 6. Lanciare l'ambiente virtuale ed il frontend
 7. Lanciare dal progetto eclipse i seguenti contesti: 
-  7.1. Sprint/SPRINT 11/it.unibo.eclipse.qak.robotMinds19/src/it/unibo/ctxRobotMind/**MainCtxRobotMind.kt**
-  7.2. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxScanningRoom/**MainCtxScanningRoom.kt**
-  7.3. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxKb/**MainCtxKb.kt**
-  7.4. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxFridge/**MainCtxFridge.kt**
-  7.5. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxNavigator/**MainCtxNavigator.kt**
-  7.6. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxParty/**MainCtxParty.kt**
-  7.7. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxGuest/**MainCtxGuest.kt** (facoltativo)
-  7.8. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxRoomButler/**MainCtxRoomButler.kt** 
+  7. Sprint/SPRINT 11/it.unibo.eclipse.qak.robotMinds19/src/it/unibo/ctxRobotMind/**MainCtxRobotMind.kt**
+  7. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxScanningRoom/**MainCtxScanningRoom.kt**
+  7. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxKb/**MainCtxKb.kt**
+  7. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxFridge/**MainCtxFridge.kt**
+  7. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxNavigator/**MainCtxNavigator.kt**
+  7. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxParty/**MainCtxParty.kt**
+  7. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxGuest/**MainCtxGuest.kt** (facoltativo)
+  7. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxRoomButler/**MainCtxRoomButler.kt** 
 
 **Attenzione:**
 - per i punti 4 e 5 si può utilizzare il file "installWebApplications.bat"
@@ -42,5 +42,5 @@ Per lanciare correttamente il nostro sistema virtuale occorre:
 
 N.B. I plugins QAK da mettere nella cartella Dropins di Eclipse XText e le Librerie sono disponibili qui: https://github.com/anatali/iss2019Lab/tree/master/libs
 
-# Tags
+## Tags
 PROLOG, IA, AI, ARTIFICIAL INTELLIGENCE, RASPBERRY, DSL, QAK, GOOGLE, VIRTUAL ENVIRONMENT, NODEJS, JAVASCRIPT, MQTT, COAP, IOT, SMART DEVICES
