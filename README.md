@@ -25,7 +25,7 @@ Per lanciare correttamente il nostro sistema virtuale occorre:
     * Sprint/SPRINT 11/**it.unibo.sprint11_definitivo**
     * Sprint/SPRINT 11/**it.unibo.eclipse.qak.robotMinds19**
 3. Eseguire da linea di comando "gradle build eclipse" per iniettare le dipendenze nei progetti
-4. Installare da linea di comando NPM (tramite il comando "npm install") il virtual environment nel progetto nei seguenti punti:   
+4. Installare da linea di comando le dipendenze tramite "npm install" nei seguenti punti del progetto:   
     * /Sprint/SPRINT 11/**it.unibo.robots19/node/WEnv/server**
     * /Sprint/SPRINT 11/**it.unibo.robots19/node/WEnv/WebGLScene** 
 5. Ripetere lo stesso procedimento del punto 4 per il frontend: 
