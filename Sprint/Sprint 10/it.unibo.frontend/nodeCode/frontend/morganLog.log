@@ -2875,3 +2875,12 @@
 ::1 - GET /images/sfondoContrasto.jpeg HTTP/1.1 304 - - 1.132 ms
 ::1 - GET /stylesheets/style.css HTTP/1.1 304 - - 0.476 ms
 ::1 - POST /reactivate HTTP/1.1 204 - - 57.400 ms
+::1 - GET / HTTP/1.1 200 2338 - 322.226 ms
+::1 - GET /images/sfondo.jpeg HTTP/1.1 200 144340 - 40.505 ms
+::1 - POST /staticStartappl HTTP/1.1 200 11138 - 566.226 ms
+::1 - GET /stylesheets/style.css HTTP/1.1 200 1235 - 79.532 ms
+::1 - GET /images/sfondo.jpeg HTTP/1.1 304 - - 1.716 ms
+::1 - POST /prepare HTTP/1.1 204 - - 16.509 ms
+::1 - POST /stop HTTP/1.1 204 - - 37.293 ms
+::1 - GET /stylesheets/dualStyle.css HTTP/1.1 200 1587 - 23.867 ms
+::1 - GET /images/sfondoContrasto.jpeg HTTP/1.1 200 144669 - 25.544 ms
