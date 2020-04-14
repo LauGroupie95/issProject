@@ -28,14 +28,14 @@ Per lanciare correttamente il nostro sistema virtuale occorre:
 /Sprints/SPRINT 11/**it.unibo.frontend_definitivo**
 6. Lanciare l'ambiente virtuale ed il frontend
 7. Lanciare dal progetto eclipse i seguenti contesti: 
-  - Sprint/SPRINT 11/it.unibo.eclipse.qak.robotMinds19/src/it/unibo/ctxRobotMind/**MainCtxRobotMind.kt**
-  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxScanningRoom/**MainCtxScanningRoom.kt**
-  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxKb/**MainCtxKb.kt**
-  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxFridge/**MainCtxFridge.kt**
-  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxNavigator/**MainCtxNavigator.kt**
-  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxParty/**MainCtxParty.kt**
-  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxGuest/**MainCtxGuest.kt** (facoltativo)
-  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxRoomButler/**MainCtxRoomButler.kt** 
+    * Sprint/SPRINT 11/it.unibo.eclipse.qak.robotMinds19/src/it/unibo/ctxRobotMind/**MainCtxRobotMind.kt**
+    * Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxScanningRoom/**MainCtxScanningRoom.kt**
+    * Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxKb/**MainCtxKb.kt**
+    * Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxFridge/**MainCtxFridge.kt**
+    * Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxNavigator/**MainCtxNavigator.kt**
+    * Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxParty/**MainCtxParty.kt**
+    * Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxGuest/**MainCtxGuest.kt** (facoltativo)
+    * Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxRoomButler/**MainCtxRoomButler.kt** 
 
 **Attenzione:**
 - per i punti 4 e 5 si può utilizzare il file "installWebApplications.bat"
