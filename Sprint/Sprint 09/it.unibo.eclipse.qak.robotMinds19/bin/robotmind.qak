@@ -95,6 +95,7 @@ QActor robotmind context ctxRobotMind{
 	State handleEnvCond{   
 		printCurrentMessage
  		onMsg( envCond : envCond(CMD) ) {
+ 			println("Ricevuto envCond con CMD = ${payloadArg(0).toString()}")
  			forward basicrobot -m robotCmd : robotCmd( h )	//First do ...
  			forward resourcemodel -m modelUpdate : modelUpdate(robot,h) //... then update the model
 		}

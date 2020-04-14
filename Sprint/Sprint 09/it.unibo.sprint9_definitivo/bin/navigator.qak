@@ -1,19 +1,27 @@
 System navigator 
 mqttBroker "localhost" : 1883  
 
+/* --------------------------- */  
+// EVENTI
+/* --------------------------- */
+  
+//REQUISITO: the Maitre is able at any time to use his/her smart-phone to stop or reactivate an activated task.
+Event stop : stop(N) 				//da frontend
+Event reactivate : reactivate(N) 	//da frontend
+
 /* --------------------------- */
 // DISPATCH
 /* --------------------------- */
 
 Dispatch modelUpdate : modelUpdate(TARGET,VALUE) //a resourcemodel (robotMinds)
+
 //da onestepahead (robotMinds)
 Dispatch stepOk : stepOk(N) 
 Dispatch stepFail : stepFail(R,T)
 
 Dispatch staticStartTheSystem : staticStartTheSystem(N) 
 
-//Adesso è utilizzato per far sapere a navi la posizione del robot dopo l'esecuzione di scanningroom
-//Più avanti potrebbe essere utile anche per Start e Stop
+//Utilizzato per far sapere a navi la posizione del robot dopo l'esecuzione di scanningroom
 Dispatch robotPosition : robotPosition(X,Y,D) //da	scanningroom 
 
 Dispatch startGoal : startGoal(X,Y)						//auto msg
@@ -78,12 +86,12 @@ QActor navi context ctxNavigator {
 	State waitCmd{
 		println("in attesa di un comando")
     }
-    Transition t0 whenMsg reachAppliance -> planPathToAppliance 	//da clear,	prepare, addFood
-				  whenMsg reachTable -> planPathToTable				//da clear,	prepare, addFood
-				  whenMsg goHome -> returnHome						//da clear,	prepare, addFood e scanningRoom
-				  whenMsg sendInfoPos -> savePos					//da scanningRoom e findTable (per aggiornare la KB degli elettrodomestici + tavolo)
-				  whenMsg robotPosition -> updateRobotPos 			//da scanningroom (per aggiornare la posizione corrente del robot)
-				  whenMsg staticStartTheSystem -> staticSetupRoom 	//da rbr 
+    Transition t0 	whenMsg reachAppliance -> planPathToAppliance 	//da clear,	prepare, addFood
+				  	whenMsg reachTable -> planPathToTable			//da clear,	prepare, addFood
+				  	whenMsg goHome -> returnHome					//da clear,	prepare, addFood e scanningRoom
+				  	whenMsg sendInfoPos -> savePos					//da scanningRoom e findTable (per aggiornare la KB degli elettrodomestici + tavolo)
+				  	whenMsg robotPosition -> updateRobotPos 		//da scanningroom (per aggiornare la posizione corrente del robot)
+				  	whenMsg staticStartTheSystem -> staticSetupRoom //da rbr 
 	
 	//Caricamento mappa e posizioni degli elettrodomestici statica				  
 	State staticSetupRoom{
@@ -106,6 +114,21 @@ QActor navi context ctxNavigator {
 		println("WARNING: static map not found")
 		println("========================================")
 	}
+	
+	//in questo stato non fa nulla, aspetta solo reactivate	  
+	State handleEventStop {
+		println("")
+		println("State handleEventStop")
+	}
+	Transition t5 whenEvent reactivate -> handleEventReactivate //da frontend
+	
+	//in questo stato non fa nulla, semplicemente aspetta uno stepOk/Fail per far ripartire il robot
+	State handleEventReactivate {
+		println("")
+		println("State handleEventReactivate")
+	}
+	Transition t6 	whenMsg stepOk   -> handleStepOk   
+					whenMsg stepFail -> handleStepFail
 		  
 	State updateRobotPos{
 		println("")
@@ -238,18 +261,18 @@ QActor navi context ctxNavigator {
    	} 
 	Goto executePlannedActions
 		
-	State executePlannedActions{
-		println("")
+	State executePlannedActions{ 
+		println("")     
 		println("State executePlannedActions")
 		solve( retract( move(M) ) ) 
 		ifSolved {  
 			["Curmove = getCurSol(\"M\").toString() 
               curmoveIsForward=(Curmove == \"w\")"]
-		} else {
+		} else { 
 			["Curmove = \"\"; curmoveIsForward=false"]
-		}  
- 	}
-	Goto checkAndDoAction if "(Curmove.length>0) " else goalOk 
+		}   
+ 	} 
+ 	Goto checkAndDoAction if "(Curmove.length>0) " else goalOk
 
  	State goalOk {
  		println("")  
@@ -288,8 +311,9 @@ QActor navi context ctxNavigator {
  		delayVar PauseTimeL
  		run itunibo.planner.moveUtils.attemptTomoveAhead(myself, StepTime)
 	} 
-	Transition t4 whenMsg stepOk   -> handleStepOk   
-				  whenMsg stepFail -> hadleStepFail 	
+	Transition t4	whenEvent stop -> handleEventStop 	//da frontend -> GESTIONE STOP
+					whenMsg stepOk   -> handleStepOk   
+				  	whenMsg stepFail -> handleStepFail 	
     	
 	State handleStepOk{
 		println("")
@@ -298,7 +322,7 @@ QActor navi context ctxNavigator {
 	}
 	Goto executePlannedActions
 	
- 	State hadleStepFail{   
+ 	State handleStepFail{   
  		println("") 
 		println("State handleStepFail")
 		onMsg(stepFail : stepFail(Obs,Time)) { 

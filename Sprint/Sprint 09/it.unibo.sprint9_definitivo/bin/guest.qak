@@ -59,7 +59,7 @@ QActor greedy context ctxGuest {
 		println("Foodcode generato: ${Foodcode}")
 		forward kb -m ate : ate($Foodcode)
 	}
-	Transition t1 whenTime 8000 -> eating
+	Transition t1 whenTime 10000 -> eating
 				  whenMsg stopEating -> endEating
 
 	State endEating {
