@@ -11,8 +11,10 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\nodeCode\\frontend\\frontendServer.js", 
-            "args": ["localhost"]
+            "program": "${workspaceFolder}\\nodeCode\\frontend\\frontendServer.js",
+            "args": [
+                "localhost"
+            ]
         }
     ]
 }
