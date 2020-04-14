@@ -16,6 +16,7 @@ class Kb ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, scope){
 		
 	override fun getBody() : (ActorBasicFsm.() -> Unit){
 		var DomesticResource = ""
+			  var KbConsulted = false
 		return { //this:ActionBasciFsm
 				state("s0") { //this:State
 					action { //it:State
@@ -33,7 +34,6 @@ class Kb ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, scope){
 					transition(edgeName="t02",targetState="foodFromRobot",cond=whenDispatch("moveFoodToDomesticResource"))
 					transition(edgeName="t03",targetState="objToRobot",cond=whenDispatch("moveObjOnRobot"))
 					transition(edgeName="t04",targetState="foodToRobot",cond=whenDispatch("moveFoodOnRobot"))
-					transition(edgeName="t05",targetState="updateFoodOnTable",cond=whenDispatch("ate"))
 				}	 
 				state("objFromRobot") { //this:State
 					action { //it:State
@@ -208,39 +208,19 @@ class Kb ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, scope){
 					}
 					 transition( edgeName="goto",targetState="waitCmd", cond=doswitch() )
 				}	 
-				state("updateFoodOnTable") { //this:State
-					action { //it:State
-						println("")
-						println("State objFromRobot")
-						var FoodCode = ""
-						if( checkMsgContent( Term.createTerm("ate(FOODCODE)"), Term.createTerm("ate(FOODCODE)"), 
-						                        currentMsg.msgContent()) ) { //set msgArgList
-								FoodCode = payloadArg(0).toString()
-								solve("itemontable(NAME,'${FoodCode}',QTA)","") //set resVar	
-								if(currentSolution.isSuccess()) { var qtyTable = Integer.parseInt(getCurSol("QTA").toString())
-								 				var name = getCurSol("NAME").toString()
-								solve("retract(itemontable(NAME,'${FoodCode}',QTA))","") //set resVar	
-								var qty = qtyTable-1
-								if(qty != 0){ solve("assert(itemontable('${name}','${FoodCode}',${qty}))","")
-								 }
-								 }
-						}
-					}
-					 transition( edgeName="goto",targetState="waitCmd", cond=doswitch() )
-				}	 
 				state("doExpose") { //this:State
 					action { //it:State
 						println("")
 						println("State doExpose")
 						 var ToSend = "" 
 						solve("expose(OT,FT,P,D,OR,FR)","") //set resVar	
-						if(currentSolution.isSuccess()) {  var foodOnTable = utils.replaceUglyString( getCurSol("FT").toString(), "food" )
-									var objOnTable = utils.replaceUglyString( getCurSol("OT").toString(), "objects" )
-									var objInPatry = utils.replaceUglyString( getCurSol("P").toString(), "food" )
-									var foodOnRobot = utils.replaceUglyString( getCurSol("FR").toString(), "food" )
-									var objOnRobot = utils.replaceUglyString( getCurSol("OR").toString(), "objects" )    
-									var objInDishwasher = utils.replaceUglyString( getCurSol("D").toString(), "objects" )			
-									ToSend = " PANTRY:  ${objInPatry}_ TABLE: ${objOnTable}%${foodOnTable}_ ROBOT: ${objOnRobot}%${foodOnRobot}_ DISHWASHER: ${objInDishwasher}!"   
+						if(currentSolution.isSuccess()) {  var foodOnTable = utils.replaceUglyString( getCurSol("FT").toString(), "cibo" )
+									var objOnTable = utils.replaceUglyString( getCurSol("OT").toString(), "oggetto" )
+									var objInPatry = utils.replaceUglyString( getCurSol("P").toString(), "oggetto" )
+									var foodOnRobot = utils.replaceUglyString( getCurSol("FR").toString(), "cibo" )
+									var objOnRobot = utils.replaceUglyString( getCurSol("OR").toString(), "oggetto" )    
+									var objInDishwasher = utils.replaceUglyString( getCurSol("D").toString(), "oggetto" )			
+									ToSend = " DISPENSA:  ${objInPatry}_ TAVOLO: ${objOnTable}%${foodOnTable}_ ROBOT: ${objOnRobot}%${foodOnRobot}_ LAVASTOVIGLIE: ${objInDishwasher}!"   
 						println("ToSend: ${ToSend}")
 						println("Cibo sul table: ${foodOnTable}")
 						println("Oggetti sul table: ${objOnTable}")

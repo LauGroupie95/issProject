@@ -1,0 +1,3 @@
+actorName | [backToCompensate - ] currentPosition | move | result
+
+GOAL: pantry | 0 4
