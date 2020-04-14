@@ -1,6 +1,6 @@
 # issProject
 Progetto per il corso di Ingegneria dei Sistemi Software M tenuto dal Prof. Antonio Natali.
-
+Componenti del team: Lorenzo Castagnini, Laura Gruppioni e Giovanni Zanca.
 
 ## Descrizione
 L'obiettivo del progetto è descritto nel documento "TFBO19ISS.pdf" che si trova in /Documenti.
