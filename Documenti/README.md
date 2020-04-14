@@ -12,7 +12,7 @@ Questo file è diviso in due sezioni:
 - Assunzioni di sviluppo: in questa sezione si trovano tutte le assunzioni che abbiamo ritenuto di dover annotare in fase di progettazione.
 
 ## Pallogrammi nei vari sprint
-In questo file sono contenuti i pallogrammi delle FSM che rappresentano gli attori QAK del nostro progetto. Tali pallogrammi sono stati creati e modificati nella fase di Sprint Review e sono ci sono serviti come supporto visivo.
+In questo file sono contenuti i pallogrammi delle FSM che rappresentano gli attori QAK del nostro progetto. Tali pallogrammi sono stati creati e modificati nella fase di Sprint Review e ci sono serviti come supporto visivo.
 
 ## Sprint e Sprint Backlog
 In questo file excel sono contenuti in dettaglio tutti gli Sprint, con i relativi Sprint Goal e Sprint Backlog.
