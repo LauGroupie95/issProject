@@ -18,24 +18,24 @@ Informazioni utili:
 ## Istruzioni per l'ambiente virtuale
 Per lanciare correttamente il nostro sistema virtuale occorre:
 1. Clonare la repository
-1. Aprire in Eclipse i seguenti due progetti:
-  2. Sprint/SPRINT 11/**it.unibo.sprint11_definitivo**
-  2. Sprint/SPRINT 11/**it.unibo.eclipse.qak.robotMinds19**
-1. Eseguire a linea di comando "gradle build eclipse" per iniettare le dipendenze nei progetti
-1. Installare a linea di comando con "npm install" il virtual environment nel progetto 
+2. Aprire in Eclipse i seguenti due progetti:
+  - Sprint/SPRINT 11/**it.unibo.sprint11_definitivo**
+  - Sprint/SPRINT 11/**it.unibo.eclipse.qak.robotMinds19**
+3. Eseguire a linea di comando "gradle build eclipse" per iniettare le dipendenze nei progetti
+4. Installare a linea di comando con "npm install" il virtual environment nel progetto 
 /Sprint/SPRINT 11/**it.unibo.robots19/node/WEnv**
-1. Ripetere lo stesso procedimento del punto 4 per il frontend: 
+5. Ripetere lo stesso procedimento del punto 4 per il frontend: 
 /Sprints/SPRINT 11/**it.unibo.frontend_definitivo**
-1. Lanciare l'ambiente virtuale ed il frontend
-1. Lanciare dal progetto eclipse i seguenti contesti: 
-  3. Sprint/SPRINT 11/it.unibo.eclipse.qak.robotMinds19/src/it/unibo/ctxRobotMind/**MainCtxRobotMind.kt**
-  3. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxScanningRoom/**MainCtxScanningRoom.kt**
-  3. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxKb/**MainCtxKb.kt**
-  3. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxFridge/**MainCtxFridge.kt**
-  3. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxNavigator/**MainCtxNavigator.kt**
-  3. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxParty/**MainCtxParty.kt**
-  3. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxGuest/**MainCtxGuest.kt** (facoltativo)
-  3. Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxRoomButler/**MainCtxRoomButler.kt** 
+6. Lanciare l'ambiente virtuale ed il frontend
+7. Lanciare dal progetto eclipse i seguenti contesti: 
+  - Sprint/SPRINT 11/it.unibo.eclipse.qak.robotMinds19/src/it/unibo/ctxRobotMind/**MainCtxRobotMind.kt**
+  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxScanningRoom/**MainCtxScanningRoom.kt**
+  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxKb/**MainCtxKb.kt**
+  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxFridge/**MainCtxFridge.kt**
+  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxNavigator/**MainCtxNavigator.kt**
+  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxParty/**MainCtxParty.kt**
+  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxGuest/**MainCtxGuest.kt** (facoltativo)
+  - Sprint/SPRINT 11/it.unibo.sprint11_definitivo/src/it/unibo/ctxRoomButler/**MainCtxRoomButler.kt** 
 
 **Attenzione:**
 - per i punti 4 e 5 si può utilizzare il file "installWebApplications.bat"
