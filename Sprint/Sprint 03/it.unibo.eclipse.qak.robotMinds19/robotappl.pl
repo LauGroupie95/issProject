@@ -2,8 +2,8 @@
 % robotappl description   
 %====================================================================================
 mqttBroker("localhost", "1883").
-context(ctxrobotappl, "localhost",  "MQTT", "0").
-context(ctxdummyformind, "dontcarehost",  "MQTT", "0").
+context(ctxrobotappl, "localhost",  "TCP", "8038").
+context(ctxdummyformind, "dontcarehost",  "TCP", "8035").
  qactor( basicrobot, ctxdummyformind, "external").
   qactor( resourcemodel, ctxdummyformind, "external").
   qactor( onestepahead, ctxdummyformind, "external").

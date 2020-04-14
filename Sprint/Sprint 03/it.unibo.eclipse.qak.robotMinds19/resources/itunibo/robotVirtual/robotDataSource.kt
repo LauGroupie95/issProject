@@ -13,8 +13,8 @@ import kotlinx.coroutines.delay
 class robotDataSource(name : String, val owner : ActorBasicFsm , val filter : ActorBasic?,
 					  val inFromServer: BufferedReader?) : ApplActorDataStream(name,owner.scope){
 	
-var obstacleName = ""
-val event = MsgUtil.buildEvent(name,"sonarRobot","sonar( 5 )")
+	var obstacleName = ""
+	val event = MsgUtil.buildEvent(name,"sonarRobot","sonar( 5 )")
 	
 	init{
 		scope.launch{  autoMsg("start","start(1)") }

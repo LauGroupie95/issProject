@@ -13,12 +13,13 @@ abstract class ApplActorDataStream(name : String, scope : CoroutineScope = Globa
 	
     override suspend fun actorBody(msg: ApplMessage) {
  		val vStr  = (Term.createTerm( msg.msgContent() ) as Struct).getArg(0).toString()
-        //println("   $name |  handles msg= $msg  vStr=$vStr")
+        println("   $name |  handles msg= $msg  vStr=$vStr")
 		elabData( vStr )
 	}
 	
 	suspend fun emitLocalStreamEvent( msg : String){
-		//println("   $name |  emitLocalStreamEvent msg= $msg  ")
+		println("")
+		println("   $name |  emitLocalStreamEvent msg= $msg  ")
 		emitLocalStreamEvent( MsgUtil.buildEvent(name, msg,"ev($msg)") )
 	}
 	

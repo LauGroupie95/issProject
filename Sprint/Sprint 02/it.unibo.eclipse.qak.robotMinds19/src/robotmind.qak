@@ -1,18 +1,22 @@
-// 248 -250 SONO LE UNICHE RIGHE DIVERSE DAL FILE ORIGINALE DEL PROF.
 System robotmind
   
 mqttBroker "localhost" : 1883    //192.168.1.18  192.168.43.229 
 
+//Event  userCmd        : userCmd(X)	//from GUI X = w | a | s | d | h 
 Event  envCond        : envCond( CONDTYPE )        //from the environment 
 
 Event  sonarRobot     : sonar( DISTANCE )	     //from  sonar on robot 
 Event  sonar          : sonar(SONAR, DISTANCE)	 //from sonar in the robot environment          
 Event  sonarData      : sonarData( D )			 //filtered by the PIPE
 Event  obstacle       : obstacle( DISTANCE ) 
-Event  polar          : p( Distance, Angle )   
+Event  polar          : p( Distance, Angle )    
 
 Event  pythonEnd       : pythonEnd(X)
-Event  local_modelChanged   : modelChanged( TARGET, VALUE ) 
+Event  local_modelChanged   : modelChanged( TARGET, VALUE )
+//Event  modelContent   : content( VALUE ) 
+
+//Event  stopAppl       : stopAppl( CMD )  
+//Event  reactivateAppl : reactivateAppl( CMD )  
 
 Dispatch robotCmd     : robotCmd( CMD )				  //sent by the mind to the basicrobot
 
@@ -91,6 +95,7 @@ QActor robotmind context ctxRobotMind{
 	State handleEnvCond{   
 		printCurrentMessage
  		onMsg( envCond : envCond(CMD) ) {
+ 			println("Ricevuto envCond con CMD = ${payloadArg(0).toString()}")
  			forward basicrobot -m robotCmd : robotCmd( h )	//First do ...
  			forward resourcemodel -m modelUpdate : modelUpdate(robot,h) //... then update the model
 		}
@@ -239,12 +244,10 @@ val logger           = itunibo.robot.Logger(\"logFiltered\")
   		else{ println("no robot") }
      	
      	delay 1000
-
-//le seguenti 3 righe non fanno funzionare il robot, quindi abbiamo tenuto le istruzioni più vecchie     	
+     	
 //     	forward basicrobot -m robotCmd : robotCmd( r )
 //     	delay 2000
 //     	forward basicrobot -m robotCmd : robotCmd( l )
-//le seguenti 5 righe sono le istruzioni più vecchie --> DA CONSERVARE
     		run itunibo.robot.robotSupport.move( "msg(a)" )
    		delay 700
    		run itunibo.robot.robotSupport.move( "msg(d)" )
@@ -262,7 +265,7 @@ val logger           = itunibo.robot.Logger(\"logFiltered\")
 			run itunibo.robot.robotSupport.move( "msg(${payloadArg(0)})" ) 
 		}	
  	}   	
-	Goto waitCmd 
+	Goto waitCmd  
 	
 	//The low-level sonar-pipe is qak-independent. This state propagates events at application level
 	State emitEventForAppl{
@@ -272,3 +275,82 @@ val logger           = itunibo.robot.Logger(\"logFiltered\")
 	}
 	Goto waitCmd 
 } 
+/* 
+QActor g521support context ctxRobotMind{
+ 	State init initial{
+		println("g521support actor STARTS ... ")
+  		[" Runtime.getRuntime().exec(\"sudo python robotCmdExec.py > cmdExecOut.txt\") "]
+   		 //robotCmdExec TERMINATES when receives: msg(rotationCmd,event,source,none,rotationCmd(endofsender), 1)
+  		 //Afterwards, it generates: msg(pythonEnd,event,rasp,none,pythonEnd,1)
+  	}         
+ 	Transition t0 whenEvent pythonEnd -> end
+ 	
+ 	State end{
+ 		println("g521support actor ENDS ... ")
+ 	}
+}
+*/ 
+
+/* 
+// REMOVED: its job is done by the sonardatafilter
+   Arduino  --(sonarRobot)--> sonardatafilter ----> sonarData , obstacle 
+ 
+QActor sonarhandler context ctxRobotMind{  
+["var LastSonarDistance = 0
+  val amplify=5
+"]
+ 	State init initial{
+		println("sonarhandler STARTS ... ")
+	}         
+	Goto waitForEvents 
+	   
+	State waitForEvents{  }      
+   	Transition t0 whenEvent sonar      ->  handleSonar
+   	              whenEvent sonarRobot ->  handleSonar
+   	               
+ 	State handleSonar{                      
+ 		//printCurrentMessage                                        
+ 		onMsg ( sonar  : sonar( SONAR, DISTANCE ) ){    			
+[" val D = Integer.parseInt( payloadArg(1) ) * amplify"] //AMPLIFY
+			emit polar : p( $D, 90  )  
+ 		}
+ 		onMsg ( sonarRobot : sonar( DISTANCE ) ){     
+[" val D = Integer.parseInt( payloadArg(0) ) * amplify"] //AMPLIFY
+			emit polar : p( $D, 180  ) 	//done by the pipe in basicrobot
+			if "LastSonarDistance  != D"  
+			forward resourcemodel -m modelChange : modelChange(sonarRobot,$payloadArg(0))
+			if "LastSonarDistance  != D" ["LastSonarDistance=D"] 
+ 		}
+ 	} 
+ 	Goto waitForEvents
+}
+*/ 
+/*
+ * Works in ctxRobotMind since it is a policy
+// REMOVED: its job is done by the sonardatafilter
+   WEnv sonarRobot --> sonardatafilter ----> sonarData , obstacle 
+ 
+ 
+ QActor sonarhandler context ctxRobotMind{    
+  	State init initial{
+		println("sonarhandler STARTS ... ")
+	}         
+	Goto waitForEvents 
+	
+ 	State waitForEvents{  }      
+   	Transition t0 whenEvent sonarData  -> handleSonar
+   				  whenEvent sonarRobot -> handleSonar //to test modeReact(model). See mbotSupport
+ 	State handleSonar{
+ 		printCurrentMessage
+ 		onMsg ( sonarData : sonarData( DISTANCE ) ){
+ 			forward resourcemodel -m modelChange : modelChange(sonarRobot,$payloadArg(0))
+ 		}
+ 		onMsg ( sonarRobot : sonar( DISTANCE ) ){
+ 			//globalTimer started in mbotSupport getDataFromArduino
+ 			run itunibo.robotMbot.globalTimer.stopTimer("sonarhandler") 
+ 			forward resourcemodel -m modelChange : modelChange(sonarRobot,$payloadArg(0))
+ 		}
+ 	}
+ 	Goto waitForEvents
+ }
+ */

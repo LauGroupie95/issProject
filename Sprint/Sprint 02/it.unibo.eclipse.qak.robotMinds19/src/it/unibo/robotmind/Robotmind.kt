@@ -35,6 +35,7 @@ class Robotmind ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, s
 						println("$name in ${currentState.stateName} | $currentMsg")
 						if( checkMsgContent( Term.createTerm("envCond(CONDTYPE)"), Term.createTerm("envCond(CMD)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
+								println("Ricevuto envCond con CMD = ${payloadArg(0).toString()}")
 								forward("robotCmd", "robotCmd(h)" ,"basicrobot" ) 
 								forward("modelUpdate", "modelUpdate(robot,h)" ,"resourcemodel" ) 
 						}

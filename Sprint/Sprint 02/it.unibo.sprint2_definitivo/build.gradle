@@ -16,7 +16,7 @@ USAGE:
 plugins {
     id 'java'
     id 'eclipse'
-    //id 'application'
+    id 'application'
     id 'org.jetbrains.kotlin.jvm' version '1.3.21'
 }
 
@@ -91,14 +91,37 @@ sourceSets {
     main.java.srcDirs += 'src'
     main.java.srcDirs += 'resources'
 }
-/*
-mainClassName = 'it.unibo.TODOKt'
+
+mainClassName = 'it.unibo.ctxSprint2.MainCtxSprint2Kt'
 
 jar {
     println("executing jar")
     from sourceSets.main.allSource
     manifest {
-        attributes 'Main-Class': "$mainClassName"
+        attributes 'Main-Class': "it.unibo.ctxSprint1.MainCtxSprint2Kt"
     }
 }
-*/
+
+//task = represents some atomic piece of work which a build performs. This might be compiling some classes, creating a JAR, generating Javadoc,
+//or publishing some archives to a repository.
+
+task navigatorStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboNavigator'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxNavigator.MainCtxNavigatorKt'
+}
+
+task scanningRoomStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboScanningRoom'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxScanningRoom.MainCtxScanningRoomKt'
+}
+
+applicationDistribution.into("bin") {
+    duplicatesStrategy= DuplicatesStrategy.EXCLUDE
+    from(navigatorStartScript)
+    from(scanningRoomStartScript)
+    fileMode = 0777
+}
