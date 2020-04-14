@@ -1,0 +1,12 @@
+actorName | [backToCompensate - ] currentPosition | move | result
+
+GOAL: pantry | 0 4
+navi | (0, 0, downDir) | w | (0, 1, downDir)
+navi | (0, 1, downDir) | w | (0, 2, downDir)
+navi | (0, 2, downDir) | w | (0, 3, downDir)
+navi | (0, 3, downDir) | w | (0, 4, downDir)
+GOAL: table | 3 4
+navi | (0, 4, downDir) | a | (0, 4, rightDir)
+navi | (0, 4, rightDir) | w | (1, 4, rightDir)
+navi | backToCompensate - (1, 4, rightDir) | s | (1, 4, rightDir)
+navi | backToCompensate - (1, 4, rightDir) | h | (1, 4, rightDir)

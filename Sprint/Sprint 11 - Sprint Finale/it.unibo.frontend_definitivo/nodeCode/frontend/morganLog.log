@@ -5095,3 +5095,15 @@
 ::1 - POST /stop HTTP/1.1 204 - - 9.838 ms
 ::1 - POST /reactivate HTTP/1.1 204 - - 7.108 ms
 ::1 - GET /stylesheets/style.css HTTP/1.1 304 - - 7.441 ms
+::1 - GET / HTTP/1.1 304 - - 29.661 ms
+::1 - GET /images/sfondo.jpeg HTTP/1.1 304 - - 2.314 ms
+::1 - POST /staticStartAppl HTTP/1.1 200 4555 - 29.179 ms
+::1 - GET /stylesheets/style.css HTTP/1.1 304 - - 3.983 ms
+::1 - GET /javascripts/engine.js HTTP/1.1 304 - - 0.966 ms
+::1 - GET /images/sfondo.jpeg HTTP/1.1 304 - - 5.435 ms
+::1 - POST /prepare HTTP/1.1 204 - - 41.452 ms
+::1 - GET /stylesheets/dualStyle.css HTTP/1.1 304 - - 0.388 ms
+::1 - POST /stop HTTP/1.1 204 - - 3.569 ms
+::1 - GET /images/sfondoContrasto.jpeg HTTP/1.1 304 - - 0.723 ms
+::1 - GET /stylesheets/style.css HTTP/1.1 304 - - 0.512 ms
+::1 - POST /reactivate HTTP/1.1 204 - - 7.885 ms
