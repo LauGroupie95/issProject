@@ -1,4 +1,4 @@
-cd itUniboRoomButler-1.0/bin/
+cd JARs/itUniboRoomButler-1.0/bin/
 
 start cmd /k itUniboFridge.bat
 start cmd /k itUniboGuest.bat
