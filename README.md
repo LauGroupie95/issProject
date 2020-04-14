@@ -51,4 +51,4 @@ Sprint/SPRINT 11/**it.unibo.frontend_definitivo/nodeCode/frontend**
 N.B. I plugins QAK da mettere nella cartella Dropins di Eclipse XText e le Librerie sono disponibili qui: https://github.com/anatali/iss2019Lab/tree/master/libs
 
 ## Tags
-PROLOG, IA, AI, ARTIFICIAL INTELLIGENCE, RASPBERRY, DSL, QAK, GOOGLE, VIRTUAL ENVIRONMENT, NODEJS, JAVASCRIPT, MQTT, COAP, IOT, SMART DEVICES
+PROLOG, AI, ARTIFICIAL INTELLIGENCE, DSL, QAK, GOOGLE, VIRTUAL ENVIRONMENT, NODEJS, JAVASCRIPT, EXPRESS, MQTT, COAP, IOT, SMART DEVICES
