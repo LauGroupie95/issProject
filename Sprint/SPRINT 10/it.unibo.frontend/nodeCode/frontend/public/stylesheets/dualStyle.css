@@ -1,0 +1,95 @@
+td.td {
+    padding: 10px;
+    width: 333px;
+}
+
+td#consoleOutput {
+    padding: 10px;
+    width: 666px;
+}
+
+td#robotStateArea {
+    padding: 10px;
+    width: 999px;
+}
+
+button.buttons {
+    font-size: 20px;
+    width: 150px;
+}
+
+button#preparebutton, button#clearbutton {
+    background-color: #dd4535;
+    border-color: #dd4535;
+}
+
+button#answerbutton, button#addfoodbutton {
+    margin-top: 5px;
+    background-color: #4934a9;
+    color: white;
+    border-color: #4934a9;
+}
+
+button#stopbutton, button#reactivatebutton {
+    background-color: #0e7a2f;
+    color: #CCCCCC;
+    border-color: #0e7a2f;
+}
+
+button#exposebutton, button#consultbutton {
+    background-color: #734200;
+    border-color: #734200;
+}
+
+input#foodcode {
+    width: 300px;
+    padding-bottom: 5px;
+    background-color: black;
+    color: white;
+}
+
+form.actions {
+    padding-bottom: 5px;
+}
+
+form#addfoodform {
+    position: relative;
+    bottom: 47px;
+    left: 151px;
+}
+
+textarea {
+    width: 666px;
+    height: 200px;
+    background-color: white;
+    resize: none;
+    color: black;
+    padding: 10px;
+    font-size: 20px;
+}
+
+div#stateArea {
+    background-color: #989899;
+}
+
+table {
+    width: 999px;
+}
+
+label {
+    width: 300px;
+    color: white;
+}
+
+h2 {
+    width: 999px;
+    color: white;
+}
+
+body {
+    background-image: url(../../images/sfondoContrasto.jpeg);
+    background-size: cover;                
+    background-repeat: no-repeat;
+    background-position: bottom bottom;
+    /* background-size: 100% auto; */
+  }
