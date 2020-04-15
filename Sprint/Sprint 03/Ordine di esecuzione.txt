@@ -1,7 +1,0 @@
-1 robotmind
-2 scanning room
-3 navigator
-4 kb
-5 prepare
-6 clear
-7 sprint3
