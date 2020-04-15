@@ -23,7 +23,7 @@ const config = {
 		*/
       ],
     movingObstacles: [
-        {
+        /*{
             name: "pallino",
             position: { x: 0, y: 0.68 },
             directionAxis: { x: true, y: false },
@@ -36,7 +36,7 @@ const config = {
             directionAxis: { x: false, y: true },
             speed: 0.05,
             range: 25
-        }
+        }*/
     ],
    staticObstacles: [
    
