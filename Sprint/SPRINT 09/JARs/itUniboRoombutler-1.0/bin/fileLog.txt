@@ -1,2 +1,0 @@
-actorName | [backToCompensate - ] currentPosition | move | result
-
