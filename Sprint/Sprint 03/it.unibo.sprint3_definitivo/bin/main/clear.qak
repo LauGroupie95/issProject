@@ -1,0 +1,113 @@
+System clear
+mqttBroker "localhost" : 1883
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+Dispatch startClear : startClear(N)
+Dispatch endClear : endClear(N)
+Dispatch goHome : goHome(MIT)
+Dispatch reachAppliance : reachAppliance(MIT, NAME)
+Dispatch reachTable : reachTable(MIT)
+Dispatch tableReached : tableReached(N)
+Dispatch fridgeReached : fridgeReached(N)
+Dispatch dishWasherReached : dishWasherReached(N)
+Dispatch homeReached : homeReached(N)
+
+//DR = domestic resource
+Dispatch moveObjToDomesticResource : moveObjToDomesticResource(DR)
+Dispatch moveFoodToDomesticResource : moveFoodToDomesticResource(DR)
+Dispatch moveObjOnRobot : moveObjOnRobot(DR)
+Dispatch moveFoodOnRobot : moveFoodOnRobot(DR)
+Dispatch expose : expose(N)
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+Context ctxClear ip [host="localhost" port=9003] +mqtt
+Context ctxDummyNavigator ip [host="localhost" port=8038] +mqtt
+Context ctxDummyKb ip [host="localhost" port=9000] +mqtt
+Context ctxDummyForSprint3 ip [host="localhost" port=9001] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+//richiamo all'attore master3, il quale è esterno al system (sprint3.qak)
+ExternalQActor master3 context ctxDummyForSprint3
+ExternalQActor navi context ctxDummyNavigator
+ExternalQActor kb context ctxDummyKb
+
+//Attore incaricato di svolgere la CLEAR
+QActor clear context ctxClear {
+	["var inTable = 0"]
+	
+	State s0 initial{
+		println("CLEAR AVVIATA")
+	}
+	Goto waitCmd
+	
+	State waitCmd{
+		println("in attesa di un comando")
+    }
+	Transition t0 whenMsg startClear -> reachTable
+
+	State reachTable{
+		println("")
+		println("State doClear")
+		println("Obiettivo table")
+		forward navi -m reachTable : reachTable(clear)
+	}
+	Transition t1 whenMsg tableReached -> inTable
+	
+	State inTable{
+		println("")
+		println("State inTable")
+		delay 1000
+		["if(inTable == 0){"]//prima volta che arrivo al tavolo durante la CLEAR
+			forward kb -m moveObjOnRobot : moveObjOnRobot(table)
+			delay 1000
+			
+			println("Obiettivo DISHWASHER")
+			forward navi -m reachAppliance : reachAppliance(clear, dishWasher)
+			["inTable = inTable + 1
+		}else{"]//seconda volta che arrivo al tavolo durante la PREPARE
+			forward kb -m moveFoodOnRobot : moveFoodOnRobot(table)
+			delay 1000
+			 
+			println("Obiettivo FRIDGE")
+			forward navi -m reachAppliance : reachAppliance(clear, fridge)
+		["}"]
+	}
+	Transition t2 whenMsg fridgeReached -> inFridge
+				  whenMsg dishWasherReached -> inDishWasher
+	
+	State inDishWasher{
+		println("")
+		println("State inDishWasher")
+		delay 1000
+		forward kb -m moveObjToDomesticResource : moveObjToDomesticResource(dishwasher)
+	}
+	Goto reachTable
+	
+	State inFridge{
+		println("")
+		println("State inFridge")
+		forward kb -m moveFoodToDomesticResource : moveFoodToDomesticResource(fridge)
+		delay 1000
+		
+		forward navi -m goHome : goHome(clear)
+	}
+	Transition t4 whenMsg homeReached -> endClear
+	
+	State endClear{
+		println("")
+		println("State endClear")
+		//stampa totale per vedere lo stato finale della stanza dopo la prepare
+		println("CLEAR terminata")
+		println("")
+		forward kb -m expose : expose
+		forward master3 -m endClear : endClear
+	}
+}

@@ -1,0 +1,306 @@
+System kb 
+mqttBroker "localhost" : 1883
+
+/* --------------------------- */  
+// EVENTI
+/* --------------------------- */
+  
+//REQUISITO: the Maitre is able, at any time to use his/her smart-phone to consult the state of the room 
+Event consult : consult(N) //da frontend
+  
+/* --------------------------- */
+// DISPATCH 
+/* --------------------------- */
+  
+//DR = domestic resource
+//FCL = food code list
+//NAMECODE = stringa formata da nomecibo_codicecibo
+//NAMECODEQTA = stringa formata da nomecibo_codicecibo_quantità
+//CONTENT = contenuto da esporre
+//FOODCODE = codice di un cibo
+Dispatch moveObjToDomesticResource : moveObjToDomesticResource(DR) 		//da prepare e da clear
+Dispatch moveFoodToDomesticResource : moveFoodToDomesticResource(DR) 	//da prepare, da clear e da addfood 
+Dispatch moveObjOnRobot : moveObjOnRobot(DR) 							//da prepare e da clear
+Dispatch moveFoodOnRobot : moveFoodOnRobot(DR, NAMECODE) 				//da fridge e da clear
+Dispatch moveFoodToFridge : moveFoodToFridge(NAMECODEQTA) 				//a fridge
+Dispatch ate : ate(FOODCODE)											//da greedy
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+Context ctxKb ip [host="localhost" port=9003] +mqtt
+Context ctxDummyForFridge ip [host="localhost" port=9006] +mqtt
+Context ctxDummyForParty ip [host="localhost" port=9007] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor prepare context ctxDummyForParty
+ExternalQActor clear context ctxDummyForParty
+ExternalQActor fridge context ctxDummyForFridge
+
+//Attore per gestire la knowledge base
+QActor kb context ctxKb {
+	["var DomesticResource = \"\""]
+	
+	State s0 initial{
+		println("KB AVVIATA")
+		solve(consult("roomState.pl"))
+	}
+	Goto waitCmd
+
+	State waitCmd{
+		println("in attesa di un comando")
+    }
+	Transition t0 	whenEvent consult -> doExpose 						//dal frontend
+					whenMsg moveObjToDomesticResource -> objFromRobot	//da prepare e da clear
+				  	whenMsg moveFoodToDomesticResource -> foodFromRobot	//da prepare, da clear e da addfood 
+				  	whenMsg moveObjOnRobot -> objToRobot				//da prepare e da clear
+				  	whenMsg moveFoodOnRobot -> foodToRobot				//da fridge e da clear
+				  	whenMsg ate -> updateFoodOnTable					//da greedy
+	
+	//Trasferimento oggetti dal robot sul tavolo o nella dispensa o nella lavastoviglie
+	State objFromRobot{
+		println("")
+		println("State objFromRobot")
+		onMsg(moveObjToDomesticResource : moveObjToDomesticResource(DR)){
+			["DomesticResource = payloadArg(0).toString()"]
+		}
+		solve(exposeObjectOnRobot(L))
+		ifSolved{
+			println("exposeObjectOnRobot = ${getCurSol(\"L\").toString()}")
+			["var objOnRobot = getCurSol(\"L\").toString().replace(\"[\", \"\").replace(\"]\", \"\")"]
+			println("Oggetti presenti sul robot: ${objOnRobot}")
+			["for(obj in objOnRobot.split(\",\")){"]
+				println("inserisco sul ${DomesticResource}: ${obj}")
+				["when(DomesticResource) {
+			  		\"table\" -> {"]
+			  			//trasferimento oggetti dal robot al tavolo
+			  			solve(assert(itemontable("${obj}")))
+						solve(retract(itemonrobot("${obj}")))
+			    	["}
+					\"pantry\" -> {"]
+						//trasferimento oggetti dal robot alla dispensa
+			    		solve(assert(iteminpantry("${obj}")))
+						solve(retract(itemonrobot("${obj}")))
+				    ["}
+					\"dishwasher\" -> {"]
+						//trasferimento oggetti dal robot alla lavastoviglie
+				    	solve(assert(itemindishwasher("${obj}")))
+						solve(retract(itemonrobot("${obj}")))
+					["}
+				}
+			}"]
+		}
+	}
+	Goto waitCmd
+	
+	//Trasferimento cibi dal robot sul tavolo o nel frigo
+	State foodFromRobot{
+		println("")  
+		println("State foodFromRobot")
+		onMsg(moveFoodToDomesticResource : moveFoodToDomesticResource(DR)){
+			["DomesticResource = payloadArg(0).toString()"]
+		}
+		solve(exposeFoodOnRobot(L))
+		ifSolved{
+			println("exposeFoodOnRobot = ${getCurSol(\"L\").toString()}")
+			["var foodOnRobot = getCurSol(\"L\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\")"]
+			println("foodOnRobot = ${foodOnRobot}")
+			["for(food in foodOnRobot.split(\"((\")){
+				if(food != \"\"){
+					var f = food.split(\",\")
+					var name = f.get(0).toString()
+					var code = f.get(1).toString()
+					var qtyRobot = Integer.parseInt(f.get(2).toString())"] //qtà sul robot
+					
+					println("inserisco sul ${DomesticResource}: ${name} ${code} ${qtyRobot}")
+					["when(DomesticResource) {
+				  		\"table\" -> {"]
+				  			//trasferimento cibo dal robot al tavolo
+				  			solve(itemontable(NAME,"${code}",QTA))
+				  			ifSolved{ //se c'è già il codice in tavola, aggiungi quantità
+				  				["var qtyTable = Integer.parseInt(getCurSol(\"QTA\").toString())"]
+				  				solve(retract(itemontable(NAME,"${code}",QTA)))
+				  				["var qtySum = qtyRobot+qtyTable"]
+				  				//solve(assert(itemontable("${name}","${code}","${qtySum}")))
+				  				["solve(\"assert(itemontable('${name}','${code}',${qtySum}))\",\"\")"] //CHIEDERE AL PROF!!!!
+				  			}
+				  			else {
+					  			//solve(assert(itemontable("${name}","${code}","${qtyRobot}")))	
+					  			["solve(\"assert(itemontable('${name}','${code}',${qtyRobot}))\",\"\")"] //CHIEDERE AL PROF!!!!
+							}
+							//svuoto robot
+							solve(retract(itemonrobot("${name}","${code}",QTA)))
+				    	["}
+						\"fridge\" -> {"]
+							[" val ToSend = \"${name}_${code}_${qtyRobot}\" "]
+							forward fridge -m moveFoodToFridge : moveFoodToFridge($ToSend)
+							//svuoto robot
+							solve(retract(itemonrobot("${name}","${code}",QTA)))
+					    ["}
+					}
+				}
+			}"]
+		}
+	}
+	Goto waitCmd
+	
+	//Trasferimento oggetti dal tavolo o dalla dispensa o dalla lavastoviglie sul robot
+	State objToRobot{
+		println("")
+		println("State objToRobot")
+		onMsg(moveObjOnRobot : moveObjOnRobot(DR)){
+			["DomesticResource = payloadArg(0).toString()"]
+		}
+		["when(DomesticResource) {
+			\"table\" -> {"]
+				solve(exposeObjectOnTable(L))
+				ifSolved{
+					println("exposeObjectOnTable = ${getCurSol(\"L\").toString()}")
+					["var objOnTable = getCurSol(\"L\").toString().replace(\"[\", \"\").replace(\"]\", \"\")"]
+					println("Oggetti presenti sul tavolo: ${objOnTable}")
+					["for(obj in objOnTable.split(\",\")){"]
+						println("inserisco sul robot: ${obj}")
+						solve(assert(itemonrobot("${obj}")))
+						solve(retract(itemontable("${obj}")))
+					["}"]
+				}
+			["}
+			\"pantry\" -> {"]
+				solve(exposePantry(L))
+				ifSolved{
+					println("exposePantry = ${getCurSol(\"L\").toString()}")
+					["var objInPantry = getCurSol(\"L\").toString().replace(\"[\", \"\").replace(\"]\", \"\")"]
+					println("Oggetti presenti nella dispensa: ${objInPantry}")
+					["for(obj in objInPantry.split(\",\")){"]
+						println("inserisco sul robot: ${obj}")
+						solve(assert(itemonrobot("${obj}")))
+						solve(retract(iteminpantry("${obj}")))
+					["}"]
+				}
+			["}
+			\"dishwasher\" -> {"]
+				//per sviluppi futuri: qui non entra mai. Finita la lavastoviglie, le stoviglie tornano alla dispensa
+				solve(exposeDishwasher(L))
+				ifSolved{
+					println("exposeDishwasher = ${getCurSol(\"L\").toString()}")
+					["var objInDishwasher = getCurSol(\"L\").toString().replace(\"[\", \"\").replace(\"]\", \"\")"]
+					println("Oggetti presenti nella lavastoviglie: ${objInDishwasher}")
+					["for(obj in objInDishwasher.split(\",\")){"]
+						println("inserisco sul robot: ${obj}")
+						solve(assert(itemonrobot("${obj}")))
+						solve(retract(itemindishwasher("${obj}")))
+					["}"]
+				}
+			["}
+		}"]	
+	}
+	Goto waitCmd
+	
+	//Trasferimento cibi dal tavolo e dal frigo sul robot
+	State foodToRobot{
+		println("")
+		println("State foodToRobot")
+		["var name = \"\"
+		var code = \"\""] 
+		onMsg(moveFoodOnRobot : moveFoodOnRobot(DR, NAMECODE)){ //da fridge e da clear
+			["DomesticResource = payloadArg(0).toString()
+			name = payloadArg(1).toString().split(\"_\").get(0).toString()				
+			code = payloadArg(1).toString().split(\"_\").get(1).toString()"]
+			println("${name}, ${code}")
+		}
+		["when(DomesticResource) {
+			\"table\" -> {"] //table non guarda nameFood e codeFood, abbiamo stringa "all_all"
+			//NOTA: eventualmente si potrebbe cambiare il messaggio o gestire con due signature diverse
+				solve(exposeFoodOnTable(L))
+				ifSolved{
+					println("exposeFoodOnTable = ${getCurSol(\"L\").toString()}")
+					["var foodOnTable = getCurSol(\"L\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\")"]
+					println("Cibo presente sul tavolo: ${foodOnTable}") 
+					["for(food in foodOnTable.split(\"((\")){
+						if(food != \"\"){
+							var f = food.split(\",\")
+							var nameFood = f.get(0).toString()
+							var codeFood = f.get(1).toString()
+							var qtyFood = Integer.parseInt(f.get(2).toString())"]
+							println("inserisco sul robot: ${nameFood} ${codeFood} ${qtyFood}")
+							solve(assert(itemonrobot("${nameFood}","${codeFood}","${qtyFood}")))
+							solve(retract(itemontable("${nameFood}","${codeFood}",QTA)))
+						["}
+					}"]
+				}
+			["}
+			\"fridge\" -> {"]
+				//il robot ha preso una qtà del cibo dal frigo. Assert sulla sua kb
+				solve(itemonrobot("${name}","${code}",QTA))
+		    	ifSolved{
+		    		println("risolta ricerca codice-cibo")
+		    		["var qty = Integer.parseInt(getCurSol(\"QTA\").toString())+1"]
+					solve(retract(itemonrobot("${name}","${code}",QTA)))
+					["solve(\"assert(itemonrobot('${name}','${code}',${qty}))\",\"\")"] //CHIEDERE AL PROF!!!!!!!!!!!!
+		    		//solve(assert(itemonrobot("${name}","${code}","${qty}")))
+		    	}
+		    	else{
+		    		solve(assert(itemonrobot("${name}","${code}",1))) //1 perché quantità è fissa	
+		    	}
+			["}
+		}"]	
+	}
+	Goto waitCmd
+    
+    //Consumo dei cibi
+    State updateFoodOnTable{
+     	println("")
+		println("State objFromRobot")
+		["var FoodCode = \"\""]
+		onMsg(ate : ate(FOODCODE)){
+			["FoodCode = payloadArg(0).toString()"]
+			solve(itemontable(NAME,"${FoodCode}",QTA))
+			ifSolved{
+				["var qtyTable = Integer.parseInt(getCurSol(\"QTA\").toString())
+ 				var name = getCurSol(\"NAME\").toString()"]
+  				solve(retract(itemontable(NAME,"${FoodCode}",QTA)))
+  				["var qty = qtyTable-1"]
+  				if "qty != 0" {
+	  				//solve(assert(itemontable("${name}","${code}","${qty}")))
+	  				["solve(\"assert(itemontable('${name}','${FoodCode}',${qty}))\",\"\")"] //CHIEDERE AL PROF!!!!
+  				}
+			}
+		}
+    }
+    Goto waitCmd
+    
+	//stato che espone lo stato della stanza
+	State doExpose{
+		println("") 
+		println("State doExpose")
+		[" var ToSend = \"\" "]
+		//non c'è il frigo perché è gestito da fridgecoap
+		solve(expose(OT, FT, P, D, OR, FR))
+		ifSolved{     
+			[" var foodOnTable = utils.replaceUglyString( getCurSol(\"FT\").toString(), \"food\" )
+			var objOnTable = utils.replaceUglyString( getCurSol(\"OT\").toString(), \"objects\" )
+			var objInPatry = utils.replaceUglyString( getCurSol(\"P\").toString(), \"food\" )
+			var foodOnRobot = utils.replaceUglyString( getCurSol(\"FR\").toString(), \"food\" )
+			var objOnRobot = utils.replaceUglyString( getCurSol(\"OR\").toString(), \"objects\" )    
+			var objInDishwasher = utils.replaceUglyString( getCurSol(\"D\").toString(), \"objects\" )			
+			ToSend = \" PANTRY:  ${objInPatry}_ TABLE: ${objOnTable}%${foodOnTable}_ ROBOT: ${objOnRobot}%${foodOnRobot}_ DISHWASHER: ${objInDishwasher}!\"   
+			"]
+      
+			println("ToSend: ${ToSend}")
+			println("Cibo sul table: ${foodOnTable}") 
+			println("Oggetti sul table: ${objOnTable}")
+			println("Oggetti rimasti nel pantry: ${objInPatry}")
+			println("Cibo rimasto sul robot: ${foodOnRobot}")
+			println("Oggetti rimasti sul robot: ${objOnRobot}")	
+			println("Oggetti rimasti nel dishwasher: ${objInDishwasher}")
+		}
+		
+		//Emit per mqttUtils.js
+		run itunibo.frontend.frontendSupport.updateFrontend(myself, ToSend)
+	}
+	Goto waitCmd
+} 

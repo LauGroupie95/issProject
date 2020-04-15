@@ -1,0 +1,11 @@
+fridge(6, 0).
+pantry(0, 4).
+dishWasher(6, 4).
+table(4, 1).
+table(5, 1).
+table(6, 2).
+table(6, 3).
+table(5, 4).
+table(4, 4).
+table(3, 3).
+table(3, 2).

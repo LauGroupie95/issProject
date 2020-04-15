@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Application</title>
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+		<script>
+			var justPrint = false;
+			var socket = io.connect();
+
+			//Sostituisce due file css
+			function changeCSS(cssFile, cssLinkIndex) {
+				var oldlink = document.getElementsByTagName("link").item(cssLinkIndex);
+
+				var newlink = document.createElement("link");
+				newlink.setAttribute("rel", "stylesheet");
+				newlink.setAttribute("type", "text/css");
+				newlink.setAttribute("href", cssFile);
+
+				document.getElementsByTagName("head").item(0).replaceChild(newlink, oldlink);
+			}
+
+			//Formatta l'output di expose e consultFridge
+			function formatter(str){
+				return str.replace(":  ",":\n");
+			}
+
+			//Formatta l'output di consultKb
+			function formatterConsult(str){
+				return str.toString().replace(/_/g,"\n\n").replace(/: /g,":\n").replace(/%/g,"\n");
+			}
+
+			//Controlla il formato del food code
+			function controlInput(str){
+				var patternFoodCode = new RegExp("c[0-9]{3}$");
+				if(!patternFoodCode.test(str)){
+					console.log("Il codice del cibo deve iniziare con 'c' e contenere 3 numeri");
+					document.getElementById('textareaOutput').value = "";
+					document.getElementById('foodcode').value = ""
+					document.getElementById('titleModal').innerHTML = "Incorrect food code";
+					document.getElementById('bodyModal').innerHTML = "The food code must start with 'c' and must contain 3 numbers";
+    				$('#modal').modal('show');
+					return false;
+				}
+				return true;
+			}
+
+			//Gestione dell'evento onClick del bottone prepare
+			function onClickPrepare(){
+				document.getElementById('stopbutton').disabled = false;
+				document.getElementById('preparebutton').disabled = true;
+				document.getElementById('prepareform').submit();
+			}
+
+			//Gestione dell'evento onClick del bottone answer
+			function onClickAnswer(foodCode){
+				controlInput(foodCode);
+			}
+
+			//Gestione dell'evento onClick del bottone addfood
+			function onClickAddFood(foodCode){
+				if(controlInput(foodCode)){
+					document.getElementById('stopbutton').disabled = false;
+					document.getElementById('addfoodbutton').disabled = true;
+					document.getElementById('clearbutton').disabled = true;
+					document.getElementById('foodcodeform').submit();
+				}
+				document.getElementById('foodcode').value = "";
+				document.getElementById('textareaOutput').value = "";
+			}
+						
+			//Gestione dell'evento onClick del bottone clear
+			function onClickClear(){
+				document.getElementById('stopbutton').disabled = false;
+				document.getElementById('addfoodbutton').disabled = true;
+				document.getElementById('clearbutton').disabled = true;
+				document.getElementById('clearform').submit();
+			}
+
+			//Gestione dell'evento onClick del bottone stop
+			function onCliskStop(){
+				document.getElementById('reactivatebutton').disabled = false;				
+				document.getElementById('stopbutton').disabled = true;
+				changeCSS('stylesheets/dualStyle.css', 1);
+				$('#title').text("RBR CONSOLE - STOPPED");
+				document.getElementById('stopform').submit();
+			}
+
+			//Gestione dell'evento onClick del bottone reactivate
+			function onClickReactivate(){
+				document.getElementById('stopbutton').disabled = false;
+				document.getElementById('reactivatebutton').disabled = true;
+				changeCSS('stylesheets/style.css', 1);
+				$('#title').text("RBR CONSOLE");
+				document.getElementById('reactivateform').submit();
+			}
+
+			//Gestione dell'evento onClick del bottone consult
+			function onClickConsult(){
+				document.getElementById('textareaOutput').value = "";
+				justPrint = false;
+				$('#consultform').submit();
+			}
+
+			//Alla ricezione di systemStarted, vengono abilitati i seguenti bottoni
+			function systemStartedReceived(){
+				document.getElementById('preparebutton').disabled = false;
+				document.getElementById('consultbutton').disabled = false;
+				document.getElementById('exposebutton').disabled = false;
+				document.getElementById('answerbutton').disabled = false;				
+			}
+
+			//Alla ricezione di endPrepare, foodAdded e warning, vengono abilitati i seguenti bottoni
+			function onParty(){
+				document.getElementById('addfoodbutton').disabled = false;
+				document.getElementById('clearbutton').disabled = false;
+				document.getElementById('stopbutton').disabled = true;				
+			}
+
+			//Alla ricezione di endClear, vengono abilitati i seguenti bottoni
+			function endClearReceived(){
+				document.getElementById('stopbutton').disabled = true;				
+			}
+
+			//Canale 'connect'
+			socket.on('connect', function(){ 
+				console.log("socket connected");
+			});
+			
+			//Canale 'message'
+	       	socket.on('message', function(v){ 
+	       		console.log("RECEIVED " + v);
+	        	if(v.indexOf("robotPosition:") >= 0){
+					//robotPosition: pos([${getPosX()},${getPosY()}],${getDirection()}]
+					var sep = v.indexOf("(");
+					var msgStr = v.substr(sep+1);
+					document.getElementById('robotPosition').innerHTML = msgStr;
+				}
+	        	else if(v.indexOf("currentTask:") >= 0){
+					//currentTask: task(Executing the command PREPARE
+					var sep = v.indexOf("(");
+					var msgStr = v.substr(sep+1);
+					document.getElementById('currentTask').innerHTML = msgStr;
+				}
+	        	else if(v.indexOf("goal:") >= 0){
+	        		//goal: goal(PANTRY | (5, 0)
+					var sep = v.indexOf("(");
+					var msgStr = v.substr(sep+1);
+	        		document.getElementById('currentGoal').innerHTML = msgStr; 
+				}
+				else if(v.indexOf("taskCompleted") >= 0){
+					//systemStarted: taskCompleted(systemStarted)
+					var sep = v.indexOf(":");
+					var msgStr = v.substr(0, sep);
+
+					if(msgStr === "systemStarted"){ 
+						systemStartedReceived();
+					} else if(msgStr === "endPrepare" || msgStr === "warning" || msgStr === "foodAdded"){
+						if(msgStr === "warning"){
+							document.getElementById('titleModal').innerHTML = "WARNING";
+							document.getElementById('bodyModal').innerHTML = "The fridge doesn't contain this food code";
+							$('#modal').modal('show');
+						}
+						onParty();
+					} else if(msgStr === "endClear"){
+						endClearReceived();
+					}
+					
+					document.getElementById('currentTask').innerHTML = "Waiting for the next command";
+					document.getElementById('currentGoal').innerHTML = "";
+				}
+			});
+			
+			//Canale 'consultKb'
+			socket.on('consultKb', function(v){
+				if(!justPrint){
+					document.getElementById('textareaOutput').value += formatterConsult(v) + '\n\n';
+					justPrint = !justPrint;
+				}
+			});
+
+			//Canale 'consultFridge'
+			socket.on('consultFridge', function(v){
+				document.getElementById('textareaOutput').value += formatter(v) + '\n\n'; 
+			});
+
+			//Canale 'printOutput'
+			socket.on('printOutput', function(v){ 
+				document.getElementById('textareaOutput').value = formatter(v);
+				document.getElementById('foodcode').value = "";
+			});
+		</script>
+	</head>
+	<body>
+		<center>
+			<div>
+				<h2 id="title" align="center">RBR CONSOLE</h2>
+				<table>
+					<tr>
+						<td class="td">
+							<form action="/prepare" class="actions" method="post" align="center" id="prepareform">
+								  <button type="submit" onclick="onClickPrepare()" class="btn btn-success buttons" id="preparebutton" disabled>PREPARE</button>
+							</form>
+							<form action="/clear" method="post" align="center" id="clearform">
+								  <button type="submit" onclick="onClickClear()" class="btn btn-success buttons" id="clearbutton" disabled>CLEAR</button>
+							</form>
+						</td>
+						<td class="td">
+							<label for="foodcode" align="center">Insert food code...</label><br/>
+							<form action="/addfood" method="post" id="foodcodeform">				    
+								<input type="text" id="foodcode" name="foodcode" placeholder="cXXX"><br/>
+								<button type="submit" formaction="/answer" onclick="onClickAnswer(document.getElementById('foodcode').value)"
+									class="btn btn-default buttons" id="answerbutton" align="left" disabled>ANSWER</button>
+								<button type="button" onclick="onClickAddFood(document.getElementById('foodcode').value)"
+									class="btn btn-default buttons" id="addfoodbutton" align="right" disabled>ADD FOOD</button>
+							</form>
+						</td>
+						<td class="td">
+							<form action="/stop" class="actions" method="post" align="center" id="stopform">
+								<button type="submit" onclick="onCliskStop()" class="btn btn-danger buttons" id="stopbutton" disabled><i class="fas fa-stop"></i> STOP</button>
+							</form>
+							<form action="/reactivate" method="post" align="center" id="reactivateform">
+								  <button type="submit" onclick="onClickReactivate()" class="btn btn-danger buttons" id="reactivatebutton" disabled><i class="fas fa-play"></i> REACTIVATE</button>
+							</form>
+						</td>
+					</tr>
+					<tr>
+						<td class="td">
+							<form action="/expose" class="actions" method="post" align="center">
+								  <button type="submit" class="btn btn-primary buttons" id="exposebutton" disabled>EXPOSE</button>
+							</form>
+							<form action="/consult" method="post" align="center" id="consultform">
+								  <button type="submit" onclick="onClickConsult()" class="btn btn-primary buttons" id="consultbutton" disabled>CONSULT</button>
+							</form>
+						</td>
+						<td colspan="2" id="consoleOutput">
+							<form>
+								<textarea id="textareaOutput" readonly></textarea>
+							</form>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="3" id="robotStateArea">
+							<!-- Parte delle stampe -->
+							<div id="stateArea">
+								<div>
+									 <b>ROBOT POSITION</b>: <span id="robotPosition"></span>
+								  </div>
+								<div>
+									  <b>CURRENT TASK</b>: <span id="currentTask"></span>
+								</div>
+								<div>
+									  <b>CURRENT GOAL</b>: <span id="currentGoal"></span>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</center>
+		
+		<!-- Modal formato codice errato -->
+		<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+			  <div class="modal-content">
+				<div class="modal-header">
+				  <h5 class="modal-title" id="titleModal"></h5>
+				</div>
+				<div class="modal-body">
+					<p id="bodyModal"></p>
+				</div>
+				<div class="modal-footer">
+				  <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
+				</div>
+			  </div>
+			</div>
+		</div>
+	</body>
+</html>
