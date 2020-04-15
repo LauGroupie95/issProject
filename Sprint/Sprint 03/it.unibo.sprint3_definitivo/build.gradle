@@ -126,6 +126,13 @@ task prepareStartScript(type:CreateStartScripts) {
     mainClassName = 'it.unibo.ctxPrepare.MainCtxPrepareKt'
 }
 
+task clearStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboClear'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxClear.MainCtxClearKt'
+}
+
 task scanningRoomStartScript(type:CreateStartScripts) {
     applicationName = 'itUniboScanningRoom'
     classpath = startScripts.classpath
@@ -138,6 +145,7 @@ applicationDistribution.into("bin") {
     from(kbStartScript)
     from(navigatorStartScript)
     from(prepareStartScript)
+    from(clearStartScript)
     from(scanningRoomStartScript)
     fileMode = 0777
 }
