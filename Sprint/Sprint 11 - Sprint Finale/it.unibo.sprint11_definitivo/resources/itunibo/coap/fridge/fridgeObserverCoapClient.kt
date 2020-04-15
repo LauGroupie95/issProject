@@ -12,7 +12,7 @@ import java.awt.Color
  
 //uguale alla classe del prof: resourceObserverCoapClient.kt  
 object fridgeObserverCoapClient : CoapHandler {
-	val robotResourceAddr = "coap://localhost:5684/resourcemodel" // "coap://192.168.43.67:5683"
+	val robotResourceAddr = "coap://localhost:5684/serverfridge" // "coap://192.168.43.67:5683"
 	val outDev            = outguiSupport.create("Resource Coap OBSERVER", Color.green)
 	
 	override fun onLoad(response: CoapResponse?) {
