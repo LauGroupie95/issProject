@@ -16,7 +16,7 @@ USAGE:
 plugins {
     id 'java'
     id 'eclipse'
-    //id 'application'
+    id 'application'
     id 'org.jetbrains.kotlin.jvm' version '1.3.21'
 }
 
@@ -91,6 +91,78 @@ sourceSets {
     main.java.srcDirs += 'src'
     main.java.srcDirs += 'resources'
 }
+
+mainClassName = 'it.unibo.ctxSprint5.MainCtxSprint5Kt'
+
+jar {
+    println("executing jar")
+    from sourceSets.main.allSource
+    manifest {
+        attributes 'Main-Class': "it.unibo.ctxSprint5.MainCtxSprint5Kt"
+    }
+}
+
+task scanningRoomStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboScanningRoom'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxScanningRoom.MainCtxScanningRoomKt'
+}
+
+task navigatorStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboNavigator'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxNavigator.MainCtxNavigatorKt'
+}
+
+task kbStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboKb'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxKb.MainCtxKbKt'
+}
+
+task fridgeStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboFridge'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxFridge.MainCtxFridgeKt'
+}
+
+task prepareStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboPrepare'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxPrepare.MainCtxPrepareKt'
+}
+
+task clearStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboClear'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxClear.MainCtxClearKt'
+}
+
+task partyStartScript(type:CreateStartScripts) {
+    applicationName = 'itUniboParty'
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = 'it.unibo.ctxParty.MainCtxPartyKt'
+}
+
+applicationDistribution.into("bin") {
+    duplicatesStrategy= DuplicatesStrategy.EXCLUDE
+    from(scanningRoomStartScript)
+    from(navigatorStartScript)
+    from(kbStartScript)
+    from(fridgeStartScript)
+    from(prepareStartScript)
+    from(partyStartScript)
+    from(clearStartScript)
+    fileMode = 0777
+}
+
 /*
 mainClassName = 'it.unibo.TODOKt'
 

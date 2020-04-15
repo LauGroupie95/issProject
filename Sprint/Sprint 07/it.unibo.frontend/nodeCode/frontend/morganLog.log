@@ -670,3 +670,6 @@
 ::1 - GET /stylesheets/style.css HTTP/1.1 304 - - 1.317 ms
 ::1 - POST /answer HTTP/1.1 204 - - 4.073 ms
 ::1 - POST /addfood HTTP/1.1 204 - - 9.322 ms
+::1 - GET / HTTP/1.1 200 1237 - 35.399 ms
+::1 - POST /startappl HTTP/1.1 200 4244 - 43.702 ms
+::1 - GET /stylesheets/style.css HTTP/1.1 200 863 - 360.363 ms

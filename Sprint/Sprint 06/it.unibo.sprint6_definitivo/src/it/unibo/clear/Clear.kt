@@ -83,10 +83,8 @@ class Clear ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, scope
 					action { //it:State
 						println("")
 						println("State endClear")
-						println("CLEAR terminata")
-						println("")
-						forward("expose", "expose" ,"kb" ) 
 						forward("endClear", "endClear(clear)" ,"rbr" ) 
+						println("CLEAR terminata")
 					}
 				}	 
 			}

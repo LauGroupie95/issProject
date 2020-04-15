@@ -1,0 +1,18 @@
+actorName | [backToCompensate - ] currentPosition | move | result
+
+roomperimeterexplorer | (0, 0, downDir) | w | (0, 1, downDir)
+roomperimeterexplorer | (0, 1, downDir) | w | (0, 2, downDir)
+roomperimeterexplorer | (0, 2, downDir) | w | (0, 3, downDir)
+roomperimeterexplorer | (0, 3, downDir) | w | (0, 4, downDir)
+roomperimeterexplorer | (0, 4, downDir) | w | (0, 5, downDir)
+roomperimeterexplorer | (0, 5, downDir) | w | (0, 6, downDir)
+roomperimeterexplorer | (0, 6, downDir) | w | (0, 7, downDir)
+roomperimeterexplorer | (0, 7, downDir) | w | (0, 8, downDir)
+roomperimeterexplorer | (0, 8, downDir) | w | (0, 9, downDir)
+roomperimeterexplorer | (0, 9, downDir) | w | (0, 10, downDir)
+roomperimeterexplorer | (0, 10, downDir) | w | (0, 11, downDir)
+roomperimeterexplorer | (0, 11, downDir) | w | (0, 12, downDir)
+roomperimeterexplorer | (0, 12, downDir) | w | (0, 13, downDir)
+roomperimeterexplorer | (0, 13, downDir) | w | (0, 14, downDir)
+roomperimeterexplorer | (0, 14, downDir) | w | (0, 15, downDir)
+roomperimeterexplorer | (0, 15, downDir) | w | (0, 16, downDir)
