@@ -5,9 +5,9 @@ che consigliamo di visionare in quanto contiene dettagliatamente quanto è stato
 
 Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint preliminare:** analisi dei requisiti
-- <ins> **Sprint 0:** muovere il robot in una determinata cella senza l'uso del planner </ins> 
+- <ins> **Sprint 0:** muovere il robot in una determinata cella senza l'uso del planner &rarr; contiene un JUnit Test</ins> 
 - **Sprint 1:** scansionare la stanza e individuare il tavolo utilizzando il planner
-- **Sprint 2:** implementazione di prepare
+- **Sprint 2:** implementazione di prepare &rarr; contiene un JUnit Test
 - **Sprint 3:** implementazione di clear
 - **Sprint 4:** frigo intelligente
 - **Sprint 5:** implementazione "add food"
@@ -17,6 +17,15 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 9:** implementazione "stop" e "reactivate"
 - **Sprint 10:** implementazione "avoid"
 - **Sprint 11:** revisione dell'intero progetto
+
+
+## Test
+Per provare il test:
+1) Installare npm tramite **installWebApplications.bat**
+2) Far partire l'ambiente virtuale tramite **startWebApplications.bat**
+3) Aprire il progetto in Eclipse
+4) Fare "Run as Kotlin JUnit Test" del file **src/Test/testSprint0.kt**
+
 
 ## Estensioni future
 
