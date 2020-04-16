@@ -12,7 +12,7 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 4:** frigo intelligente
 - **Sprint 5:** implementazione "add food"
 - **Sprint 6:** implementazione "consult"
-- <ins> **Sprint 7:** implementazione parziale del frontend </ins> &rarr no interazione con il sistema Qak 
+- <ins> **Sprint 7:** implementazione parziale del frontend </ins> &rarr; no interazione con il sistema Qak 
 - **Sprint 8:** implementazione definitiva del frontend
 - **Sprint 9:** implementazione "stop" e "reactivate"
 - **Sprint 10:** implementazione "avoid"
