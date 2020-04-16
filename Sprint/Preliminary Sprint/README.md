@@ -4,7 +4,7 @@ L'organizzazione agile dettata dal metodo SCRUM è visibile nel Product Backlog 
 che consigliamo di visionare in quanto contiene dettagliatamente quanto è stato fatto durante i vari sprint.
 
 Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
-- **Sprint preliminare:** analisi dei requisiti
+- <ins>**Sprint preliminare:** analisi dei requisiti</ins> 
 - **Sprint 0:** muovere il robot in una determinata cella senza l'uso del planner
 - **Sprint 1:** scansionare la stanza e individuare il tavolo utilizzando il planner
 - **Sprint 2:** implementazione di prepare
