@@ -5,9 +5,9 @@ che consigliamo di visionare in quanto contiene dettagliatamente quanto è stato
 
 Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - <ins>**Sprint preliminare:** analisi dei requisiti</ins> 
-- **Sprint 0:** muovere il robot in una determinata cella senza l'uso del planner
+- **Sprint 0:** muovere il robot in una determinata cella senza l'uso del planner &rarr; contiene un JUnit Test
 - **Sprint 1:** scansionare la stanza e individuare il tavolo utilizzando il planner
-- **Sprint 2:** implementazione di prepare
+- **Sprint 2:** implementazione di prepare &rarr; contiene un JUnit Test
 - **Sprint 3:** implementazione di clear
 - **Sprint 4:** frigo intelligente
 - **Sprint 5:** implementazione "add food"
