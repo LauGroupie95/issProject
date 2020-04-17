@@ -18,6 +18,18 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 10:** implementazione "avoid"
 - **Sprint 11:** revisione dell'intero progetto
 
+## Test
+Per provare il test:
+1) Installare npm tramite **installWebApplications.bat**
+2) Far partire l'ambiente virtuale tramite **startWebApplications.bat**
+3) Aprire il progetto in Eclipse
+4) Far partire all'interno del progetto i seguenti file, nell'ordine:
+    * src/it.unibo.ctxScanningRoom/**MainCtxScanningRoom.kt**
+    * src/it.unibo.ctxNavigator/**MainCtxNavigator.kt**
+    * src/it.unibo.ctxSprint2/**MainCtxSprint2.kt**
+5) Una volta terminata l'esecuzione, facendo refresh, si vedranno i due file di log generati, necessari per il test.
+6) Fare "Run as Kotlin JUnit Test" del file **src/Test/testSprint0.kt**
+
 ## Estensioni future
 
 Oltre ad alcune estensioni legate al codice e alle feature dell'applicazione, ad ora il progetto è realizzato esclusivamente nell'ambiente virtuale, ma abbiamo già predisposto il nostro **robot fisico equipaggiato di raspberry.**
