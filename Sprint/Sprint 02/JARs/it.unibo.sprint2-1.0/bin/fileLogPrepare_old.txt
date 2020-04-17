@@ -1,0 +1,20 @@
+S0 PREPARE
+PA: [dishes,forks,glasses]
+FT: []
+OT: []
+DW: []
+FD: [  raspberry,c000,5,  meat,c001,5,  cola,c002,5,  salad,c003,5,  pizza,c004,10,  fanta,c005,10,  apple,c006,10]
+FR: []
+OR: []
+
+
+S0 PREPARE
+PA: [dishes,forks,glasses]
+FT: []
+OT: []
+DW: []
+FD: [  raspberry,c000,5,  meat,c001,5,  cola,c002,5,  salad,c003,5,  pizza,c004,10,  fanta,c005,10,  apple,c006,10]
+FR: []
+OR: []
+
+

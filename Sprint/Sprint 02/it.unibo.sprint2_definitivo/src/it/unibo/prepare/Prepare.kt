@@ -48,7 +48,6 @@ class Prepare ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, sco
 						println("Lista oggetti sul robot: ${getCurSol("L").toString()}")
 						 }
 						println("Obiettivo TABLE")
-						delay(5000) 
 						forward("reachTable", "reachTable" ,"navi" ) 
 					}
 					 transition(edgeName="t25",targetState="intable",cond=whenDispatch("tableReached"))
@@ -84,7 +83,6 @@ class Prepare ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, sco
 						}
 						}
 						if(inTable == 0){
-						delay(5000) 
 						forward("reachAppliance", "reachAppliance(fridge)" ,"navi" ) 
 						println("Obiettivo FRIDGE")
 						inTable = inTable + 1
@@ -101,7 +99,7 @@ class Prepare ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, sco
 						println("Sono nel FRIDGE")
 						solve("exposeFridge(L)","") //set resVar	
 						println("Oggetti inizialmente nel frigo: ${getCurSol("L").toString()}")
-						delay(5000) 
+						delay(1000) 
 						solve("retract(iteminfridge(meet,c001,5))","") //set resVar	
 						solve("retract(iteminfridge(cola,c002,5))","") //set resVar	
 						solve("retract(iteminfridge(pizza,c004,10))","") //set resVar	

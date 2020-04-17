@@ -133,7 +133,7 @@ QActor navi context ctxNavigator {
 				println("${ReachDestination}: ${getCurSol(\"X\")}, ${getCurSol(\"Y\")}")
 				["GoalX = Integer.parseInt(getCurSol(\"X\").toString().replace(\"'\", \"\"))
 			 	GoalY =  Integer.parseInt(getCurSol(\"Y\").toString().replace(\"'\", \"\"))"]
-			 	run utils.writeLog("GOAL: $ReachDestination | $GoalX $GoalY")
+			 	run utils.writeLog("GOAL: $ReachDestination | $GoalX, $GoalY")
 			 	run utils.writeLastPos("${GoalX}", "${GoalY}", "${ReachDestination}")
 				forward navi -m startGoal : startGoal
 			}	
@@ -148,7 +148,7 @@ QActor navi context ctxNavigator {
 		 	GoalY = 0
 			ReachDestination = \"RH\"
 			Sender = payloadArg(0).toString()"]
-			run utils.writeLog("GOAL: $ReachDestination | $GoalX $GoalY")
+			run utils.writeLog("GOAL: $ReachDestination | $GoalX, $GoalY")
 			run utils.writeLastPos("${GoalX}", "${GoalY}", "${ReachDestination}")
 			forward navi -m startGoal : startGoal(0, 0)
 		}
@@ -179,7 +179,7 @@ QActor navi context ctxNavigator {
 		}
 		run itunibo.planner.plannerUtil.resetGoal(GoalX,GoalY)
 		["ReachDestination = \"table\""]
-		run utils.writeLog("GOAL: $ReachDestination | $GoalX $GoalY")
+		run utils.writeLog("GOAL: $ReachDestination | $GoalX, $GoalY")
 		//args --> x: String, y: String, fname : String
 		run utils.writeLastPos("${GoalX}", "${GoalY}", "${ReachDestination}")
 		forward navi -m startGoal : startGoal
@@ -217,6 +217,7 @@ QActor navi context ctxNavigator {
 	 	forward resourcemodel -m modelUpdate : modelUpdate(roomMap,$MapStr)
 	 	run itunibo.planner.moveUtils.showCurrentRobotState()
 	 	run itunibo.planner.plannerUtil.saveMap(mapname)
+	 	run utils.writeLog("GOAL REACHED: $ReachDestination | ${itunibo.planner.plannerUtil.getPosX()}, ${itunibo.planner.plannerUtil.getPosY()}")
 	 	delay 500
 	 	["when(ReachDestination) {
 	  		\"table\" -> "] forward prepare -m tableReached : tableReached

@@ -46,6 +46,7 @@ QActor master2 context ctxSprint2 {
 	State s0 initial{
 		run utils.backupLastLog()
 		run utils.resetFile("fileLog")
+		run utils.resetFile("fileLogPrepare")
 		run utils.writeLog("actorName | [backToCompensate - ] currentPosition | move | result\\n")
 	}
 	Goto startscanningperimeter
@@ -80,7 +81,27 @@ QActor master2 context ctxSprint2 {
 QActor prepare context ctxSprint2 {
 	["var inTable = 0"]
 	State s0 initial{
+		run utils.writeLogPrepare("S0 PREPARE")
 		solve(consult("roomState.pl"))
+		solve(expose(OT, FT, F, P, D, OR, FR))
+		ifSolved{
+			println("cibo sul tavolo: ${getCurSol(\"FT\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			println("oggetti sul tavolo: ${getCurSol(\"OT\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			println("cibo nel frigo: ${getCurSol(\"F\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			println("oggetti rimasti nel pantry: ${getCurSol(\"P\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			println("cibo rimasto sul robot: ${getCurSol(\"FR\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			println("oggetti rimasti sul robot: ${getCurSol(\"OR\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")	
+			println("oggetti rimasti nel dishwasher: ${getCurSol(\"D\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+		
+			run utils.writeLogPrepare("PA: ${getCurSol(\"P\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("FT: ${getCurSol(\"FT\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("OT: ${getCurSol(\"OT\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("DW: ${getCurSol(\"D\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("FD: ${getCurSol(\"F\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("FR: ${getCurSol(\"FR\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("OR: ${getCurSol(\"OR\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+		}
+		run utils.writeLogPrepare("\\n")
 	}
 	Transition t0 whenMsg startPrepare -> startprepare
 	
@@ -92,19 +113,33 @@ QActor prepare context ctxSprint2 {
 	Transition t1 whenMsg pantryReached -> inPantry
 	
 	State inPantry{
-		println("Sono nel PANTRY")
+		println("PANTRY")
 		delay 1000
 		solve(iteminpantry(X))
 		ifSolved{
+			run utils.writeLogPrepare("PANTRY")
+			
 			solve(exposePantry(L))
 			println("Lista oggetti nel pantry: ${getCurSol(\"L\").toString()}")
-			solve(retract(iteminpantry(dish)))
-			solve(retract(iteminpantry(glasses)))
-			solve(retract(iteminpantry(forks)))
 			
-			solve(assert(itemonrobot(dish)))
+			solve(retract(iteminpantry(dishes)))
+			run utils.writeLogPrepare("-.PA.dishes")
+			
+			solve(retract(iteminpantry(glasses)))
+			run utils.writeLogPrepare("-.PA.glasses")
+			
+			solve(retract(iteminpantry(forks)))
+			run utils.writeLogPrepare("-.PA.forks")
+			
+			solve(assert(itemonrobot(dishes)))
+			run utils.writeLogPrepare("+.OR.dishes")
+			
 			solve(assert(itemonrobot(forks)))
+			run utils.writeLogPrepare("+.OR.forks")
+			
 			solve(assert(itemonrobot(glasses)))
+			run utils.writeLogPrepare("+.OR.glasses\\n")
+			
 			solve(exposeObjectOnRobot(L))
 			println("Lista oggetti sul robot: ${getCurSol(\"L\").toString()}")
 		}
@@ -116,17 +151,23 @@ QActor prepare context ctxSprint2 {
 	
 	State intable{
 		println("Sono nel TABLE")
+		run utils.writeLogPrepare("TABLE")
 		delay 1000
 		solve(exposeObjectOnRobot(L))//controllo se sul robot ho degli oggetti da inserire sul tavolo
 		ifSolved{
 			["var objOnRobot = getCurSol(\"L\").toString()
 			objOnRobot = objOnRobot.replace(\"[\", \"\").replace(\"]\", \"\")"]
 			println("Oggetti presenti sul robot: ${objOnRobot}")
-			["for(obj in objOnRobot.split(\",\")){"]
-				println("inserisco sul tavolo: ${obj}")
-				solve(assert(itemontable("${obj}")))
-				solve(retract(itemonrobot("${obj}")))			
-			["}"]
+			if "objOnRobot != \"\"" {
+				["for(obj in objOnRobot.split(\",\")){"]
+					println("inserisco sul tavolo: ${obj}")
+					solve(assert(itemontable("${obj}")))
+					run utils.writeLogPrepare("+.OT.${obj}")
+					
+					solve(retract(itemonrobot("${obj}")))	
+					run utils.writeLogPrepare("-.OR.${obj}")		
+				["}"]
+			}	
 		}
 		
 		solve(exposeFoodOnRobot(L))//controllo se sul robot ho dei cibi da inserire sul tavolo
@@ -142,10 +183,15 @@ QActor prepare context ctxSprint2 {
 					var quantita = Integer.parseInt(f.get(2).toString())"]
 					println("inserisco sul tavolo: ${nome} ${codice} ${quantita}")
 					solve(assert(itemontable("${nome}", "${codice}", "${quantita}")))
+					run utils.writeLogPrepare("+.FT.${nome},${codice},${quantita}")
+					
 					solve(retract(itemonrobot("${nome}", "${codice}", Z)))
+					run utils.writeLogPrepare("-.FR.${nome},${codice},${quantita}")
 				}
 			["}"]
 		["}"]
+		
+		run utils.writeLogPrepare("\\n")
 		
 		["if(inTable == 0){"]//prima volta che arrivo al tavolo durante la PREPARE
 			delay 5000
@@ -162,20 +208,32 @@ QActor prepare context ctxSprint2 {
 	
 	State inFridge{
 		println("Sono nel FRIDGE")
+		run utils.writeLogPrepare("FRIDGE")
+		
 		solve(exposeFridge(L))
 		println("Oggetti inizialmente nel frigo: ${getCurSol(\"L\").toString()}")
 		
 		delay 5000
 		
 		//rimuovo dal frigo gli oggetti da mettere sulla tavola
-		solve(retract(iteminfridge(meet, c001, 5)))
+		solve(retract(iteminfridge(meat, c001, 5)))
+		run utils.writeLogPrepare("-.FD.meat,c001,5")
+		
 		solve(retract(iteminfridge(cola, c002, 5)))
+		run utils.writeLogPrepare("-.FD.cola,c002,5")
+		
 		solve(retract(iteminfridge(pizza, c004, 10)))
+		run utils.writeLogPrepare("-.FD.pizza,c004,10")
 		
 		//Quindi inserisco gli oggetti sul robot
-		solve(assert(itemonrobot(meet, c001, 5)))
+		solve(assert(itemonrobot(meat, c001, 5)))
+		run utils.writeLogPrepare("+.FR.meat,c001,5")
+		
 		solve(assert(itemonrobot(cola, c002, 5)))
+		run utils.writeLogPrepare("+.FR.cola,c002,5")
+		
 		solve(assert(itemonrobot(pizza, c004, 10)))
+		run utils.writeLogPrepare("+.FR.pizza,c004,10\\n")
 		
 		solve(exposeFridge(L))
 		println("Oggetti rimasti nel frigo: ${getCurSol(\"L\").toString()}")
@@ -189,6 +247,8 @@ QActor prepare context ctxSprint2 {
 	State endPrepare{
 		//stampa totale per vedere lo stato finale della stanza dopo la prepare
 		println("PREPARE terminata")
+		run utils.writeLogPrepare("HOME")
+		
 		println("")
 		println("STATO FINALE DELLA STANZA")
 		solve(expose(OT, FT, F, P, D, OR, FR))
@@ -200,6 +260,14 @@ QActor prepare context ctxSprint2 {
 			println("cibo rimasto sul robot: ${getCurSol(\"FR\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
 			println("oggetti rimasti sul robot: ${getCurSol(\"OR\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")	
 			println("oggetti rimasti nel dishwasher: ${getCurSol(\"D\").toString().replace(\"[\", \"\").replace(\"]\", \"\").replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+		
+			run utils.writeLogPrepare("PA: ${getCurSol(\"P\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("FT: ${getCurSol(\"FT\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("OT: ${getCurSol(\"OT\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("DW: ${getCurSol(\"D\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("FD: ${getCurSol(\"F\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("FR: ${getCurSol(\"FR\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
+			run utils.writeLogPrepare("OR: ${getCurSol(\"OR\").toString().replace(\"/\", \"\").replace(\")\", \"\").replace(\"'\", \"\").replace(\"(\", \" \")}")
 		}
 	}
 }

@@ -98,7 +98,7 @@ jar {
     println("executing jar")
     from sourceSets.main.allSource
     manifest {
-        attributes 'Main-Class': "it.unibo.ctxSprint1.MainCtxSprint2Kt"
+        attributes 'Main-Class': "$mainClassName"
     }
 }
 

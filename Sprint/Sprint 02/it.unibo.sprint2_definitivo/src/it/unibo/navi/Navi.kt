@@ -107,7 +107,7 @@ class Navi ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, scope)
 								if(currentSolution.isSuccess()) { println("${ReachDestination}: ${getCurSol("X")}, ${getCurSol("Y")}")
 								GoalX = Integer.parseInt(getCurSol("X").toString().replace("'", ""))
 											 	GoalY =  Integer.parseInt(getCurSol("Y").toString().replace("'", ""))
-								utils.writeLog( "GOAL: $ReachDestination | $GoalX $GoalY"  )
+								utils.writeLog( "GOAL: $ReachDestination | $GoalX, $GoalY"  )
 								utils.writeLastPos( "${GoalX}", "${GoalY}", "${ReachDestination}"  )
 								forward("startGoal", "startGoal" ,"navi" ) 
 								 }
@@ -124,7 +124,7 @@ class Navi ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, scope)
 										 	GoalY = 0
 											ReachDestination = "RH"
 											Sender = payloadArg(0).toString()
-								utils.writeLog( "GOAL: $ReachDestination | $GoalX $GoalY"  )
+								utils.writeLog( "GOAL: $ReachDestination | $GoalX, $GoalY"  )
 								utils.writeLastPos( "${GoalX}", "${GoalY}", "${ReachDestination}"  )
 								forward("startGoal", "startGoal(0,0)" ,"navi" ) 
 						}
@@ -155,7 +155,7 @@ class Navi ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, scope)
 						 }
 						itunibo.planner.plannerUtil.resetGoal( GoalX, GoalY  )
 						ReachDestination = "table"
-						utils.writeLog( "GOAL: $ReachDestination | $GoalX $GoalY"  )
+						utils.writeLog( "GOAL: $ReachDestination | $GoalX, $GoalY"  )
 						utils.writeLastPos( "${GoalX}", "${GoalY}", "${ReachDestination}"  )
 						forward("startGoal", "startGoal" ,"navi" ) 
 					}
@@ -196,6 +196,7 @@ class Navi ( name: String, scope: CoroutineScope ) : ActorBasicFsm( name, scope)
 						forward("modelUpdate", "modelUpdate(roomMap,$MapStr)" ,"resourcemodel" ) 
 						itunibo.planner.moveUtils.showCurrentRobotState(  )
 						itunibo.planner.plannerUtil.saveMap( mapname  )
+						utils.writeLog( "GOAL REACHED: $ReachDestination | ${itunibo.planner.plannerUtil.getPosX()}, ${itunibo.planner.plannerUtil.getPosY()}"  )
 						delay(500) 
 						when(ReachDestination) {
 							  		"table" -> 

@@ -1,9 +1,9 @@
-iteminpantry(dish).
+iteminpantry(dishes).
 iteminpantry(forks).
 iteminpantry(glasses).
 
 iteminfridge(raspberry, c000, 5).
-iteminfridge(meet, c001, 5).
+iteminfridge(meat, c001, 5).
 iteminfridge(cola, c002, 5).
 iteminfridge(salad, c003, 5).
 iteminfridge(pizza, c004, 10).
