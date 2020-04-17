@@ -1,0 +1,226 @@
+System analisi
+mqttBroker "localhost" : 1883	
+
+/* --------------------------- */  
+// EVENTI
+/* --------------------------- */
+
+Event envCond : envCond(CONDTYPE)       			 		//da ambiente virtuale 
+Event local_modelChanged : modelChanged(TARGET, VALUE)		//da robotmind
+Event sonarRobot : sonar(DISTANCE)	     					//da resourcemodel
+
+Event consult : consult(N) 									//da maitre
+Event stop : stop(N) 										//da maitre
+Event reactivate : reactivate(N)							//da maitre
+
+/* --------------------------- */
+// DISPATCH
+/* --------------------------- */
+
+Dispatch answer : answer(FOODCODE)							//da maitre e rbr
+Dispatch expose : expose(N)									//da maitre
+Dispatch warning : warning(FOODCODE) 						//a maitre
+Dispatch modelChange  : modelChange( TARGET, VALUE )  		//da infrastruttura di supporto
+Dispatch modelUpdate  : modelUpdate( TARGET, VALUE )  		//da robotmind
+Dispatch prepare : prepare(N)								//da maitre
+Dispatch addFood : addFood(FOODCODE)						//da maitre
+Dispatch clear : clear(N) 									//da maitre
+Dispatch robotCmd : robotCmd (CMD)							//da robotmind
+Dispatch updateKb : updateKb(NAMECODEQTA)					//da rbr
+Dispatch updateFridge : updateFridge(NAMECODEQTA)			//da rbr
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+ 
+ Context ctxMaitre ip [host="smartphoneHost" port=9000] +mqtt
+ Context ctxFridge ip [host="fridgeHost" port=9001] +mqtt
+ Context ctxRobot ip [host="localhost" port=9002] +mqtt
+ 
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor maitre context ctxMaitre
+
+//ctxRobot - attori per fare muovere il robot 
+QActor basicrobot context ctxRobot {
+	State s0 initial { }
+	Goto waitCmd
+	
+	State waitCmd { }
+	Transition t0 whenMsg robotCmd -> handleRobotCmd
+	
+	State handleRobotCmd { 
+		onMsg( robotCmd : robotCmd( MOVE ) ) { //MOVE = w | a | s | d | h
+			//esegui mossa
+		}	
+ 	}  
+	Goto waitCmd 
+}
+
+QActor robotmind context ctxRobot{  
+	State s0 initial { }
+	Goto waitCmd
+	 
+	State waitCmd { } 
+	Transition t0 whenEvent envCond            -> handleEnvCond
+				  whenEvent sonarRobot         -> handleSonarRobot
+		          whenEvent local_modelChanged -> handleModelChanged
+
+	State handleEnvCond {   
+ 		onMsg( envCond : envCond(CMD) ) {
+			//le due forward seguenti sono fatte per allineare modello e fisico
+ 			forward basicrobot -m robotCmd : robotCmd( h )	
+ 			forward resourcemodel -m modelUpdate : modelUpdate(robot,h)
+		}
+	} 
+	Goto waitCmd 
+  
+ 	State handleModelChanged {
+		onMsg ( local_modelChanged : modelChanged(robot,CMD) ){ 
+			forward basicrobot -m robotCmd : robotCmd( $payloadArg(1) )
+ 		}
+		onMsg ( local_modelChanged : modelChanged(prepare,CMD) ){ 
+			forward basicrobot -m robotCmd : robotCmd( $payloadArg(1) )
+ 		}
+	}
+	Goto waitCmd 
+	
+	State handleSonarRobot{
+		onMsg ( sonarRobot : sonar( D ) ){
+			["val Dist = Integer.parseInt( payloadArg(0)  )  "]
+			if   "Dist<=soglia && goingForward" { 	
+				forward resourcemodel -m modelChange : modelChange(robot,h)
+			}
+			//Aggiorno il modello
+			forward resourcemodel -m modelUpdate : modelUpdate(sonarRobot,$payloadArg(0))
+		}		
+	}
+	Goto waitCmd 
+}
+ 
+QActor resourcemodel context ctxRobot{ 
+	State s0 initial { } 
+	Goto waitModelChange
+ 	
+	State waitModelChange { }
+	Transition t0 whenMsg modelChange -> changeModel
+	              whenMsg modelUpdate -> updateModel
+
+	State updateModel{  
+		onMsg( modelUpdate : modelUpdate(robot,V) ) {
+			run itunibo.robot.resourceModelSupport.updateRobotModel( myself, payloadArg(1) )
+		}
+		onMsg( modelUpdate : modelUpdate(sonarRobot,V ) ) {
+			run itunibo.robot.resourceModelSupport.updateSonarRobotModel( myself, payloadArg(1) )
+		}
+		onMsg( modelUpdate : modelUpdate(room,V ) ) {
+			run itunibo.robot.resourceModelSupport.updateRoomMapModel( myself, payloadArg(1) )
+		}
+	} 
+    Goto  waitModelChange
+    
+	State changeModel {  
+		onMsg( modelChange : modelChange( robot,V ) ) { 
+			//updateRobotModel( myself, payloadArg(1) )
+			emit local_modelChanged : modelChanged (robot, $payloadArg(1)) //per la robotmind
+		} 
+	}  
+	Goto  waitModelChange
+}
+
+//ctxRobot - business logic del sistema
+QActor rbr context ctxRobot{
+	State s0 initial { }
+	Goto waitcmd
+	
+	State waitcmd { }
+	Transition t0 	whenMsg prepare -> executePrepare		//inizia la prepare
+					whenMsg addFood -> addFood				//inizia a fare addFood
+					whenMsg clear -> executeClear			//inizia la clear
+
+	State executePrepare {
+		//execute the prepare task
+	}
+	Goto waitcmd
+
+	State addFood {
+		onMsg(addFood : addFood(CODE)) {
+			[" var FoodCode = payloadArg(0).toString() "]
+			if "foodcode == available" {
+				//execute the add food
+			}
+			else {
+				forward maitre -m warning : warning
+			}
+		}
+	}
+	Goto waitcmd
+	
+	State executeClear {
+		//execute clear
+	}
+	Goto waitcmd
+}
+
+QActor kb context ctxRobot{ 
+	State s0 initial{ }
+	Goto waitCmd
+
+	State waitCmd{ }
+	Transition t0 	whenEvent consult -> doExpose 			//da maitre
+					whenMsg updateKb  -> handleKbUpdate		//da rbr
+	
+	State doExpose{
+		//expose contenuto della nostra stanza
+	}
+	Goto waitCmd
+
+	State handleKbUpdate{
+		onMsg(updateKb : updateKb(NAMECODEQTA)) {
+			[" var nameCodeQta = payloadArg(0).toString() "]
+			//aggiornamento della stanza (tolto o aggiunto item/cibo)
+		}
+	}
+	Goto waitCmd
+}
+
+//ctxFridge
+QActor fridge context ctxFridge {
+
+	State s0 initial{ }
+	Goto wait
+	
+	State wait{	} 
+	Transition t0 	whenMsg updateFridge -> handleFridgeUpdate		//da rbr 
+	  				whenMsg answer -> handleAnswer 					//da maitre e rbr
+	  				whenMsg expose -> handleExpose 					//da maitre
+	 
+	State handleAnswer{
+		//answer via coap
+		onMsg(answer : answer(CODE)) {
+			[" var FoodCode = payloadArg(0).toString() "]
+			if "foodcode == available" {
+				//send yes
+			}
+			else {
+				//send no
+			}
+		}
+	} 
+	Goto wait
+	
+	State handleExpose {
+		//expose via coap
+	}
+	Goto wait
+	
+	State handleFridgeUpdate{
+		onMsg(updateFridge : updateFridge(NAMECODEQTA)) {
+			[" var nameCodeQta = payloadArg(0).toString() "]
+			//aggiornamento del frigo (tolto o aggiunto cibo)
+		}
+	}
+	Goto wait
+}
