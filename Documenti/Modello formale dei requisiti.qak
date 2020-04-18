@@ -60,6 +60,7 @@ QActor basicrobot context ctxRobot {
 }
 
 QActor robotmind context ctxRobot{  
+	["val soglia = 6"]
 	State s0 initial { }
 	Goto waitCmd
 	 
@@ -90,7 +91,7 @@ QActor robotmind context ctxRobot{
 	State handleSonarRobot{
 		onMsg ( sonarRobot : sonar( D ) ){
 			["val Dist = Integer.parseInt( payloadArg(0)  )  "]
-			if   "Dist<=soglia && goingForward" { 	
+			if "Dist <= soglia" { 	
 				forward resourcemodel -m modelChange : modelChange(robot,h)
 			}
 			//Aggiorno il modello
@@ -110,13 +111,13 @@ QActor resourcemodel context ctxRobot{
 
 	State updateModel{  
 		onMsg( modelUpdate : modelUpdate(robot,V) ) {
-			run itunibo.robot.resourceModelSupport.updateRobotModel( myself, payloadArg(1) )
+			//updateRobotModel( myself, payloadArg(1) )
 		}
 		onMsg( modelUpdate : modelUpdate(sonarRobot,V ) ) {
-			run itunibo.robot.resourceModelSupport.updateSonarRobotModel( myself, payloadArg(1) )
+			//updateSonarRobotModel( myself, payloadArg(1) )
 		}
 		onMsg( modelUpdate : modelUpdate(room,V ) ) {
-			run itunibo.robot.resourceModelSupport.updateRoomMapModel( myself, payloadArg(1) )
+			//updateRoomMapModel( myself, payloadArg(1) )
 		}
 	} 
     Goto  waitModelChange
@@ -148,7 +149,7 @@ QActor rbr context ctxRobot{
 	State addFood {
 		onMsg(addFood : addFood(CODE)) {
 			[" var FoodCode = payloadArg(0).toString() "]
-			if "foodcode == available" {
+			if "FoodCode == available" {
 				//execute the add food
 			}
 			else {
@@ -201,7 +202,7 @@ QActor fridge context ctxFridge {
 		//answer via coap
 		onMsg(answer : answer(CODE)) {
 			[" var FoodCode = payloadArg(0).toString() "]
-			if "foodcode == available" {
+			if "FoodCode == available" {
 				//send yes
 			}
 			else {
