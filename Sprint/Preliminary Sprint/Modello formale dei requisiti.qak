@@ -33,9 +33,9 @@ Dispatch updateFridge : updateFridge(NAMECODEQTA)			//da rbr
 // CONTESTI
 /* --------------------------- */
  
- Context ctxMaitre ip [host="smartphoneHost" port=9000] +mqtt
- Context ctxFridge ip [host="fridgeHost" port=9001] +mqtt
- Context ctxRobot ip [host="localhost" port=9002] +mqtt
+Context ctxMaitre ip [host="smartphoneHost" port=9000] +mqtt
+Context ctxFridge ip [host="fridgeHost" port=9001] +mqtt
+Context ctxRobot ip [host="localhost" port=9002] +mqtt
  
 /* --------------------------- */
 // ATTORI
@@ -43,7 +43,17 @@ Dispatch updateFridge : updateFridge(NAMECODEQTA)			//da rbr
 
 ExternalQActor maitre context ctxMaitre
 
-//ctxRobot - attori per fare muovere il robot 
+/* --------------------------- */
+// Attori nel contesto ctxRobot 
+/* --------------------------- */
+ 
+//Lista degli attori in questo contesto:
+//QActor basicrobot context ctxRobot 
+//QActor robotmind context ctxRobot 
+//QActor resourcemodel context ctxRobot
+//QActor rbr context ctxRobot
+//QActor kb context ctxRobot  
+ 
 QActor basicrobot context ctxRobot {
 	State s0 initial { }
 	Goto waitCmd
@@ -186,7 +196,10 @@ QActor kb context ctxRobot{
 	Goto waitCmd
 }
 
-//ctxFridge
+/* --------------------------- */
+// Contesto ctxFridge 
+/* --------------------------- */
+
 QActor fridge context ctxFridge {
 
 	State s0 initial{ }
