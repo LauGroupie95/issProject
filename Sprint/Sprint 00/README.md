@@ -19,6 +19,10 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 11:** revisione dell'intero progetto
 
 
+# Sprint 0
+
+In questo Sprint si trovano il documento di "analisi dei requisiti, analisi del problema e progetto", il ppt del modello del sistema con struttura, interazione e comportamento e il testPlan.
+
 ## Test
 Per provare il test:
 1) Installare npm tramite **installWebApplications.bat**
