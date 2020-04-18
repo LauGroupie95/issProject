@@ -18,7 +18,8 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 10:** implementazione "avoid"
 - **Sprint 11:** revisione dell'intero progetto
 
-## Estensioni future
+# Sprint preliminare
 
-Oltre ad alcune estensioni legate al codice e alle feature dell'applicazione, ad ora il progetto è realizzato esclusivamente nell'ambiente virtuale, ma abbiamo già predisposto il nostro **robot fisico equipaggiato di raspberry.**
-Potrebbe essere perciò necessario avere altri sprint il cui sprint goal sarebbe appunto quello di implementare su robot fisico l'intero progetto.
+- In questo Sprint si trovano il *documento di analisi dei requisiti* in forma testuale e il rispettivo *modello formale*. 
+- Come supporto grafico abbiamo anche il *ppt del modello* del sistema con struttura, interazione e comportamento. 
+- Nel file *Struttura SCRUM* sono sintetizzati gli step da seguire in tale metodo organizzativo agile.
