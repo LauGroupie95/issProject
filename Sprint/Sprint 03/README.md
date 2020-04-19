@@ -18,6 +18,18 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 10:** implementazione "avoid"
 - **Sprint 11:** revisione dell'intero progetto
 
+## Note importanti
+Da requisiti, il maître è dentro la stanza e può dare al robot tre comandi: uno di questi è **CLEAR**. A seguito di questo comando, parte il relativo task in cui il robot deve rimettere il cibo non mangiato in frigo e i piatti in lavastoviglie. 
+
+Nello scenario generale:
+-	al tempo T0, il maître presispone gli item prefissati.
+-	Il maître invia PREPARE e attende la fine del task.
+-	Il maître invia CLEAR e aspetta la fine del task. Poi RBR torna a casa.
+
+Con il comando “clear”:
+* rbr prenderà tutto il cibo rimasto nel table per rimetterlo in fridge.
+* metterà tutti gli oggetti nel dishwasher. Al termine, rbr tornerà in RH.
+
 ## Estensioni future
 
 Oltre ad alcune estensioni legate al codice e alle feature dell'applicazione, ad ora il progetto è realizzato esclusivamente nell'ambiente virtuale, ma abbiamo già predisposto il nostro **robot fisico equipaggiato di raspberry.**
