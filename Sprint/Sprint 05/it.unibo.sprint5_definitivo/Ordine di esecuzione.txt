@@ -1,8 +1,9 @@
 1 robotmind
-2 scanning room
+2 scanningroom
 3 navigator
 4 kb
 5 fridge
 6 prepare
-7 clear
-8 sprint4
+7 party
+8 clear
+9 sprint5

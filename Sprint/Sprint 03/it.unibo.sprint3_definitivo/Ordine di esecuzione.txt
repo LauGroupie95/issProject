@@ -1,5 +1,5 @@
 1 robotmind
-2 scanning room
+2 scanningroom
 3 navigator
 4 kb
 5 prepare
