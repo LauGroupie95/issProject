@@ -18,6 +18,10 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 10:** implementazione "avoid"
 - **Sprint 11:** revisione dell'intero progetto
 
+## Note importanti
+
+Questo Sprint lo abbiamo dedicato al tentativo di convogliare risultati eterogenei provenienti da protocolli differenti in un'unica risposta in quanto il frigo espone il suo contenuto tramite CoAP, in contrasto con tutti gli altri attori.
+
 ## Estensioni future
 
 Oltre ad alcune estensioni legate al codice e alle feature dell'applicazione, ad ora il progetto è realizzato esclusivamente nell'ambiente virtuale, ma abbiamo già predisposto il nostro **robot fisico equipaggiato di raspberry.**
