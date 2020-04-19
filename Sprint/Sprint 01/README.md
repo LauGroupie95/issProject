@@ -18,6 +18,10 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 10:** implementazione "avoid"
 - **Sprint 11:** revisione dell'intero progetto
 
+# Sprint 1
+
+In questo Sprint si trovano il documento di "analisi dei requisiti, analisi del problema e progetto", il ppt del modello del sistema con struttura, interazione e comportamento e i pallogrammi dei vari attori.
+
 ## Estensioni future
 
 Oltre ad alcune estensioni legate al codice e alle feature dell'applicazione, ad ora il progetto è realizzato esclusivamente nell'ambiente virtuale, ma abbiamo già predisposto il nostro **robot fisico equipaggiato di raspberry.**
