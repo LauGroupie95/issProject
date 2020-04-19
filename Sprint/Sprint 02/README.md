@@ -19,8 +19,7 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 11:** revisione dell'intero progetto
 
 # Sprint 2
-
-Nella cartella userDocs si trovano...........
+Nella cartella userDocs si trovano il documento di "analisi dei requisiti, analisi del problema e progetto", il ppt del modello del sistema con struttura, interazione e comportamento, i pallogrammi dei vari attori, il modello eseguibile del nuovo attore "Prepare" e il testPlan.
 
 ## Test
 Per provare il test:
