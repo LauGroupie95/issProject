@@ -18,6 +18,10 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 10:** implementazione "avoid"
 - **Sprint 11:** revisione dell'intero progetto
 
+# Sprint 2
+
+Nella cartella userDocs si trovano...........
+
 ## Test
 Per provare il test:
 1) Installare npm tramite **installWebApplications.bat**
