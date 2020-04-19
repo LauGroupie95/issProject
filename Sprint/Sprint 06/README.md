@@ -22,3 +22,6 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 
 Oltre ad alcune estensioni legate al codice e alle feature dell'applicazione, ad ora il progetto è realizzato esclusivamente nell'ambiente virtuale, ma abbiamo già predisposto il nostro **robot fisico equipaggiato di raspberry.**
 Potrebbe essere perciò necessario avere altri sprint il cui sprint goal sarebbe appunto quello di implementare su robot fisico l'intero progetto.
+
+### Estensioni possibili Sprint6
+Il RoomButler è stato creato seguendo l'architettura master/slave: il master è una simulazione del frontend che dà gli ordini e lo slave, cioè Room Butler, diventa a sua volta un master che dice agli altri attori cosa fare.
