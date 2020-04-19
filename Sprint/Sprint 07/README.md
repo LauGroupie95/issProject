@@ -21,6 +21,7 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 ## Note importanti
 
 In questa prima realizzazione grezza del frontend abbiamo predisposto i bottoni e le viste che ci serviranno per l'interazione con il sistema costruito tramite l'infrastruttura QAK. Per il momento la pagina WEB è a sé stante, i listener degli eventi sono attivi ma non provocano nessuna reazione. 
+
 Per evitare eccezioni legate all'inserimento del food-code da parte dell'utente, nella casella relativa, abbiamo previsto un controllo lato client della stringa per far sì che sia ben formata. Infatti se il codice è nel formato cxxx, l'input è accettato, altrimenti appare una modal che segnala come deve essere il contenuto della stringa.
 
 ## Estensioni future
