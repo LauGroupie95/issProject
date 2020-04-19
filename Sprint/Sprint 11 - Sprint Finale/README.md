@@ -18,6 +18,12 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 10:** implementazione "avoid"
 - <ins>**Sprint 11:** revisione dell'intero progetto</ins>
 
+## Note importanti
+
+In seguito alla revisione dell'intero progetto in locale, abbiamo fatto alcuni tentativi di distribuzione del sistema:
+- All'interno della stessa rete, seppur in nodi differenti, abbiamo visto che le performance e il funzionamento del sistema sono garantiti. 
+- Al contrario, distribuendo ulteriormente il sistema su reti diverse, la comunicazione è annientata da problemi che spaziano dalla cessione di un IP pubblico statico da parte di un internet service provider alla gestione del traffico in input/output regolato dai firewall delle nostre reti interne. Per quanto riguarda il protocollo MQTT siamo riusciti a fronteggiare il problema utilizzando un broker pubblico, mentre per il protocollo CoAP il problema persiste.
+
 ## Estensioni future
 
 Oltre ad alcune estensioni legate al codice e alle feature dell'applicazione, ad ora il progetto è realizzato esclusivamente nell'ambiente virtuale, ma abbiamo già predisposto il nostro **robot fisico equipaggiato di raspberry.**
