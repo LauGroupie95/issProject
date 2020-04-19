@@ -1,0 +1,136 @@
+System sprint2
+
+mqttBroker "localhost" : 1883
+
+Dispatch scanningPerimeter	: scanningPerimeter(N) 	//da maitre a roomperimeterexplorer
+Dispatch endPerimeter 		: endPerimeter(N) 		//da roomperimeterexplorer a maitre
+Dispatch scanningTable 		: scanningTable(N) 		//da maitre a findtable
+Dispatch endScanningTable 	: endScanningTable(N) 	//da findtable a maitre
+Dispatch reachAppliance 	: reachAppliance(NAME) 	//da maitre e da prepare a navi 
+
+Dispatch startPrepare 	: startPrepare(N) 	//da maitre a prepare
+Dispatch goHome  		: goHome(MIT) 		//da maitre e da prepare a navi 
+Dispatch reachTable  	: reachTable(N) 	//da prepare a navi 
+
+Dispatch pantryReached  : pantryReached(N) 	//da navi a prepare
+Dispatch tableReached  	: tableReached(N)	//da navi a prepare
+Dispatch fridgeReached  : fridgeReached(N)	//da navi a prepare
+Dispatch homeReached  	: homeReached(N)	//da navi a prepare e a maitre
+
+/* --------------------------- */
+// CONTESTI
+/* --------------------------- */
+
+Context ctxSprint2 				ip [host="localhost" port=9002] +mqtt
+Context ctxDummyScanningRoom 	ip [host="localhost" port=8068] +mqtt
+Context ctxDummyNavigator 		ip [host="localhost" port=8038] +mqtt
+
+/* --------------------------- */
+// ATTORI
+/* --------------------------- */
+
+ExternalQActor roomperimeterexplorer 	context ctxDummyScanningRoom 
+ExternalQActor findtable 				context ctxDummyScanningRoom
+ExternalQActor navi 					context ctxDummyNavigator
+
+//attore dello sprint
+QActor master2 context ctxSprint2 {
+	State s0 initial{ }
+	Goto startscanningperimeter
+	
+	State startscanningperimeter{
+		forward roomperimeterexplorer -m scanningPerimeter : scanningPerimeter	
+	}
+	Transition t0 whenMsg endPerimeter -> findtable
+	
+	State findtable{
+		forward findtable -m scanningTable : scanningTable
+	}
+	Transition t1 whenMsg endScanningTable -> endscanning
+	
+	State endscanning{
+		forward navi -m goHome: goHome(master2)
+   	}
+   	Transition t2 whenMsg homeReached -> executePrepare
+        
+	//aggiunto nuovo stato	
+    State executePrepare{
+        forward prepare -m startPrepare : startPrepare  
+	}
+}
+
+//Attore incaricato di svolgere la PREPARE
+QActor prepare context ctxSprint2 {
+	["var inTable = 0"]
+	State s0 initial{
+		solve(consult("roomState.pl")) //consulto kb della stanza
+	}
+	Transition t0 whenMsg startPrepare -> startprepare
+	
+	State startprepare{
+		println("Obiettivo PANTRY")
+		forward navi -m reachAppliance : reachAppliance(pantry)
+	}
+	Transition t1 whenMsg pantryReached -> inPantry
+	
+	State inPantry{
+		solve(iteminpantry(X))
+		ifSolved{
+			solve(exposePantry(L))
+			//tolgo contenuto dalla pantry 	es. 	solve(retract(iteminpantry(forks)))
+			//metto contenuto nel robot 	es. 	solve(assert(itemonrobot(forks)))
+		}
+		forward navi -m reachTable : reachTable
+	}
+	Transition t2 whenMsg tableReached -> intable
+	
+	State intable {
+		
+		solve(exposeObjectOnRobot(L))
+		ifSolved{
+			//tolgo oggetti dal robot 	es. 	solve(retract(itemonrobot("${obj}")))	
+			//metto oggetti nel tavolo 	es. 	solve(assert(itemontable("${obj}")))
+		}
+		
+		solve(exposeFoodOnRobot(L))
+		ifSolved{
+			//tolgo cibo dal robot 		es. 	solve(assert(itemontable("${nome}", "${codice}", "${quantita}")))
+			//metto cibo nel tavolo 	es. 	solve(retract(itemonrobot("${nome}", "${codice}", "${quantita}")))
+		}
+	
+		if "inTable == 0" {	//prima volta che arrivo al tavolo durante la PREPARE
+			forward navi -m reachAppliance : reachAppliance(fridge)
+			println("Obiettivo FRIDGE")
+			["inTable = inTable + 1"]
+		}
+		else{	//seconda volta che arrivo al tavolo durante la PREPARE
+			println("Obiettivo RH")
+			forward navi -m goHome : goHome(prepare)
+		}
+	}
+	Transition t3 	whenMsg fridgeReached -> inFridge
+					whenMsg homeReached -> endPrepare
+	
+	State inFridge{
+		solve(exposeFridge(L))
+		
+		//rimuovo dal frigo gli oggetti da mettere sulla tavola: set prefissato
+		//es. solve(retract(iteminfridge(meat, c001, 5)))
+		
+		//Quindi inserisco gli oggetti sul robot
+		//es. solve(assert(itemonrobot(meat, c001, 5)))
+		
+		println("Obiettivo TABLE")
+		forward navi -m reachTable : reachTable
+	}
+	Transition t4 whenMsg tableReached -> intable
+	
+	State endPrepare{
+		println("")
+		println("STATO FINALE DELLA STANZA")
+		solve(expose(OT, FT, F, P, D, OR, FR))
+		ifSolved{
+			//print delle liste
+		}
+	}
+}
