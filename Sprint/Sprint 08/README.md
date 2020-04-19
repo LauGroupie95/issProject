@@ -53,3 +53,8 @@ Abbiamo inserito un attore “greedy” che mangia un cibo per volta ogni 10 sec
 + Se il cibo non c’è, si fa una richiesta al master che appare sul frontend con scritto “Puoi aggiungere questo cibo nel buffet?”, con un popup o qualcosa del genere.
     * Se il maitre non accetta, non succede niente.
     * Se il maitre accetta, si scatena automaticamente l’addfood senza che il maitre debba scrivere il codice nell’input text e prema addFood: basta che prema OK nel popup.
+    
+---
+
+Per aiutare il maître nell'inserimento del codice lato frontend, una estensione futura è quella di una casella dotata di autocompletamento.
+Per popolare la lista di codici da suggerire, si potrebbe anche utilizzare un file.
