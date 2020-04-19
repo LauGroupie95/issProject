@@ -21,7 +21,7 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 
 # Sprint 0
 
-In questo Sprint si trovano il documento di "analisi dei requisiti, analisi del problema e progetto", il ppt del modello del sistema con struttura, interazione e comportamento e il testPlan.
+Nella cartella userDocs si trovano il documento di "analisi dei requisiti, analisi del problema e progetto", il ppt del modello del sistema con struttura, interazione e comportamento e il testPlan.
 
 ## Test
 Per provare il test:
