@@ -20,7 +20,7 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 
 # Sprint 1
 
-In questo Sprint si trovano il documento di "analisi dei requisiti, analisi del problema e progetto", il ppt del modello del sistema con struttura, interazione e comportamento e i pallogrammi dei vari attori.
+Nella cartella userDocs si trovano il documento di "analisi dei requisiti, analisi del problema e progetto", il ppt del modello del sistema con struttura, interazione e comportamento e i pallogrammi dei vari attori.
 
 ## Estensioni future
 
