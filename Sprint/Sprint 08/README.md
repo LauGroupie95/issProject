@@ -18,6 +18,11 @@ Di seguito riassumiamo per ogni sprint il relativo Sprint Goal:
 - **Sprint 10:** implementazione "avoid"
 - **Sprint 11:** revisione dell'intero progetto
 
+## Note importanti
+
+Non è previsto nei requisiti ma per simulare lo svolgimento dell'evento abbiamo deciso di inserire un attore nuovo chiamato greedy che mangerà casualmente il cibo ad intevalli regolari. Tale attore non è essenziale per il funzionamento del sistema, infatti esso emula il comportamento di un ospite.
+
+
 ## Estensioni future
 
 Oltre ad alcune estensioni legate al codice e alle feature dell'applicazione, ad ora il progetto è realizzato esclusivamente nell'ambiente virtuale, ma abbiamo già predisposto il nostro **robot fisico equipaggiato di raspberry.**
