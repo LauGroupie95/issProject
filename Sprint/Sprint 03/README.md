@@ -27,8 +27,13 @@ Nello scenario generale:
 -	Il maître invia CLEAR e aspetta la fine del task. Poi RBR torna a casa.
 
 Con il comando “clear”:
-* rbr prenderà tutto il cibo rimasto nel table per rimetterlo in fridge.
-* metterà tutti gli oggetti nel dishwasher. Al termine, rbr tornerà in RH.
+* rbr andrà da casa al tavolo.
+* Prenderà tutti gli oggetti rimasti sul tavolo e li porterà alla lavastoviglie.
+* Dalla lavastoviglie ritornerà al tavolo.
+* Dal tavolo prenderà tutto il cibo rimasto per rimetterlo nel frigorifero.
+* Al termine, rbr tornerà in RH.
+
+![clear](./userDocs/clear.png)
 
 ## Estensioni future
 
