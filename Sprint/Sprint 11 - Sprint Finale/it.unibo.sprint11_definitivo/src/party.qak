@@ -13,8 +13,6 @@ Dispatch clear : clear(N)
 //a rbr 
 Dispatch endPrepare : endPrepare(MIT)
 Dispatch endClear : endClear(MIT)
-
-//a frontend
 Dispatch foodAdded : foodAdded(MIT)
 Dispatch warning : warning(FOODCODE) 								 //REQUISITO: send a warning to Maitre when code food doesn't exist
 																	 //FOODCODE = cxxx cioè una c seguita da tre numeri
